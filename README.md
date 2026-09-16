@@ -2,6 +2,11 @@
 
 一個結合個人身份稱呼、即時高精度時鐘、動態問候與現代毛玻璃（Glassmorphism）美學的時間儀表板網頁。
 
+<img width="1381" height="954" alt="image" src="https://github.com/user-attachments/assets/2001cae1-61b7-499a-9df4-59f10065710d" />
+
+
+
+
 ## 🌟 功能特色
 
 1. **個人專屬姓名展示與自訂**：
