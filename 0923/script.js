@@ -174,28 +174,129 @@ function getFilteredStations() {
   });
 }
 
-function renderStations() {
-  const filtered = getFilteredStations();
-  markerLayer.clearLayers();
+function aggregateByCounty(list) {
+  const groups = new Map();
 
-  filtered.forEach(s => {
-    L.marker([s.lat, s.lon], { icon: stationIcon(s), title: `${s.stationName} ${s.temperature}°C` })
-      .bindPopup(popupHtml(s))
-      .addTo(markerLayer);
+  list.forEach(s => {
+    const current = groups.get(s.county) || {
+      county: s.county,
+      count: 0,
+      sumLat: 0,
+      sumLon: 0,
+      sumTemp: 0,
+      minLat: Infinity,
+      maxLat: -Infinity,
+      minLon: Infinity,
+      maxLon: -Infinity
+    };
+
+    current.count += 1;
+    current.sumLat += s.lat;
+    current.sumLon += s.lon;
+    current.sumTemp += s.temperature;
+    current.minLat = Math.min(current.minLat, s.lat);
+    current.maxLat = Math.max(current.maxLat, s.lat);
+    current.minLon = Math.min(current.minLon, s.lon);
+    current.maxLon = Math.max(current.maxLon, s.lon);
+    groups.set(s.county, current);
   });
 
+  return [...groups.values()].map(g => ({
+    county: g.county,
+    count: g.count,
+    lat: g.sumLat / g.count,
+    lon: g.sumLon / g.count,
+    avgTemp: g.sumTemp / g.count,
+    bounds: [[g.minLat, g.minLon], [g.maxLat, g.maxLon]]
+  }));
+}
+
+function countyIcon(county) {
+  const color = tempColor(county.avgTemp);
+  return L.divIcon({
+    className: "county-label-wrap",
+    html: `
+      <div class="county-label" style="--county-color:${color}">
+        <span class="county-name">${county.county}</span>
+        <span class="county-temp">${county.avgTemp.toFixed(1)}°</span>
+      </div>
+    `,
+    iconSize: [92, 42],
+    iconAnchor: [46, 21]
+  });
+}
+
+function updateSummary(filtered) {
   els.stationCount.textContent = filtered.length;
   els.summaryScope.textContent = els.countySelect.value || "全台";
 
   const temps = filtered.map(s => s.temperature);
   els.minTemp.textContent = temps.length ? `${Math.min(...temps).toFixed(1)}°` : "—";
   els.maxTemp.textContent = temps.length ? `${Math.max(...temps).toFixed(1)}°` : "—";
+}
 
-  if (filtered.length && (els.countySelect.value || els.searchInput.value.trim())) {
-    map.fitBounds(L.latLngBounds(filtered.map(s => [s.lat, s.lon])).pad(0.2), { maxZoom: 10 });
+function renderMapMarkers() {
+  const filtered = getFilteredStations();
+  markerLayer.clearLayers();
+  updateSummary(filtered);
+
+  const showStations = map.getZoom() >= 9;
+
+  if (showStations) {
+    filtered.forEach(s => {
+      L.marker([s.lat, s.lon], {
+        icon: stationIcon(s),
+        title: `${s.stationName} ${s.temperature}°C`
+      })
+        .bindPopup(popupHtml(s))
+        .addTo(markerLayer);
+    });
+    return;
+  }
+
+  aggregateByCounty(filtered).forEach(county => {
+    const marker = L.marker([county.lat, county.lon], {
+      icon: countyIcon(county),
+      title: `${county.county} 平均 ${county.avgTemp.toFixed(1)}°C`
+    });
+
+    marker.on("click", () => {
+      const bounds = L.latLngBounds(county.bounds).pad(0.25);
+      map.fitBounds(bounds, { maxZoom: 10 });
+      if (map.getZoom() < 9) {
+        map.setView(bounds.getCenter(), 9);
+      }
+    });
+
+    marker.bindTooltip(
+      `${county.county} · ${county.count} 個測站 · 平均 ${county.avgTemp.toFixed(1)}°C`,
+      { direction: "top", offset: [0, -18] }
+    );
+
+    marker.addTo(markerLayer);
+  });
+}
+
+function focusFilteredStations() {
+  const filtered = getFilteredStations();
+  updateSummary(filtered);
+
+  if (!filtered.length) {
+    markerLayer.clearLayers();
+    return;
+  }
+
+  if (els.countySelect.value || els.searchInput.value.trim()) {
+    const bounds = L.latLngBounds(filtered.map(s => [s.lat, s.lon])).pad(0.2);
+    map.fitBounds(bounds, { maxZoom: 10 });
+    if (map.getZoom() < 9) {
+      map.setView(bounds.getCenter(), 9);
+    }
   } else {
     map.setView([23.7, 121.0], 7);
   }
+
+  renderMapMarkers();
 }
 
 async function loadWeatherOnce() {
@@ -217,7 +318,7 @@ async function loadWeatherOnce() {
     if (!stations.length) throw new Error("API 有回應，但沒有可用測站資料");
 
     rebuildCountyOptions();
-    renderStations();
+    renderMapMarkers();
 
     const latest = stations.map(s => s.observedAt).filter(Boolean).sort().at(-1);
     els.updatedAt.textContent = formatTime(latest);
@@ -230,7 +331,8 @@ async function loadWeatherOnce() {
   }
 }
 
-els.countySelect.addEventListener("change", renderStations);
-els.searchInput.addEventListener("input", renderStations);
+els.countySelect.addEventListener("change", focusFilteredStations);
+els.searchInput.addEventListener("input", focusFilteredStations);
+map.on("zoomend", renderMapMarkers);
 
 loadWeatherOnce();
