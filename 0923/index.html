@@ -6,7 +6,7 @@
   <title>台灣即時氣象地圖｜AIoT-DA HW1</title>
   <meta name="description" content="CWA O-A0003-001 即時氣象視覺化地圖" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-  <link rel="stylesheet" href="./style.css" />
+  <link rel="stylesheet" href="./style.css?v=20260923-3" />
 </head>
 <body>
   <main class="app-shell">
@@ -17,7 +17,7 @@
         <p class="eyebrow">NCHU · AIoT-DA HW1 · CWA OpenData</p>
         <h1>台灣即時氣象視覺化地圖</h1>
       </div>
-      <button id="refreshBtn" type="button">↻ 更新資料</button>
+      <span class="load-once-badge">開啟時讀取一次</span>
     </header>
 
     <section class="search-panel glass" aria-label="搜尋與篩選">
@@ -71,14 +71,13 @@
       <div class="message-card glass">正在取得中央氣象署即時資料…</div>
     </div>
 
-    <div id="errorToast" class="error-toast" hidden>
+    <div id="errorToast" class="error-toast" style="display:none">
       <strong>⚠️ 無法取得資料</strong>
       <span id="errorText"></span>
-      <button id="retryBtn" type="button">重試</button>
     </div>
   </main>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-  <script src="./script.js"></script>
+  <script src="./script.js?v=20260923-3"></script>
 </body>
 </html>
