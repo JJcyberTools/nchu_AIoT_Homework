@@ -230,3 +230,39 @@ h1{margin:0;font-size:clamp(1.25rem,2vw,1.75rem);letter-spacing:-.03em}
     grid-template-rows:auto 150px minmax(110px,1fr);
   }
 }
+
+.region-label-wrap{
+  background:transparent!important;
+  border:0!important;
+}
+.region-label{
+  min-width:88px;
+  padding:7px 10px 6px;
+  border:1px solid color-mix(in srgb,var(--region-color) 72%,white 28%);
+  border-radius:14px;
+  background:rgba(2,6,23,.82);
+  box-shadow:0 8px 22px rgba(0,0,0,.28), inset 0 -3px 0 var(--region-color);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  white-space:nowrap;
+  cursor:pointer;
+  backdrop-filter:blur(6px);
+}
+.region-label strong{
+  color:var(--region-color);
+  font-size:14px;
+  font-weight:900;
+  letter-spacing:.08em;
+}
+.region-label span{
+  color:#f8fafc;
+  font-size:12px;
+  font-weight:800;
+}
+@media(max-width:720px){
+  .region-label{min-width:72px;padding:5px 7px}
+  .region-label strong{font-size:11px}
+  .region-label span{font-size:10px}
+}
