@@ -1,19 +1,69 @@
-# 台灣即時氣象視覺化地圖｜AIoT-DA HW1
+# Taiwan Weather GIS Dashboard
+## AIoT L3 - CWA HW1
 
-國立中興大學 AIoT-DA 課程 HW1。依課堂 Notion「AI Vibe coding 天氣預測 Forecast with CWA API」需求製作，參考 `huanchen1107/taiwan-weather-map` 的架構與互動方向，完成一個類 AirBox / 類 Windy 的台灣即時氣象地圖。
+> **CWA Open Data → Taiwan GIS → GitHub Pages**  
+> 💡 從氣象資料到互動式台灣地圖，使用真實中央氣象署資料完成 AIoT 天氣視覺化作業。
 
-> 本專案不直接嵌入 Windy。地圖使用 Leaflet + Esri 深色底圖，氣象觀測資料來自中央氣象署（CWA）OpenData API。
+**Live demo website:**  
+https://jjcybertools.github.io/nchu_AIoT_Homework/0923/
 
-## 功能
+**GitHub source:**  
+https://github.com/JJcyberTools/nchu_AIoT_Homework/tree/main/0923
 
-- 台灣互動式地圖
-- CWA `O-A0003-001` 自動氣象站資料
-- `O-A0001-001` 備援資料集
-- 氣溫分級彩色測站 marker
+<!--
+圖片截圖完成後，可以把圖片放到 0923/docs/demo.png，再取消下一行註解：
+![Live Demo Snapshot](docs/demo.png)
+-->
+
+本作業以中央氣象署（CWA）真實 Open Data 為資料來源，從 API 資料取得開始，將即時觀測資料整理後，結合 Leaflet、Taiwan GIS 行政區邊界與互動式圖表，在 GitHub Pages 建立可直接操作的 Taiwan Weather GIS Web。
+
+目前 HW1 以 **CWA API + JSON + JavaScript + GIS + GitHub Pages** 為主；SQLite、資料庫 ETL、預報歷史資料等內容將配合後續課程再延伸。
+
+## 五大 Gate - 進度追蹤
+
+- [x] **Gate 1：CWA API 資料取得**
+  - 使用中央氣象署 Open Data API
+  - 使用資料集 `O-A0003-001`
+  - 網站開啟時讀取一次即時觀測資料
+
+- [x] **Gate 2：JSON 資料整理**
+  - 解析測站名稱、行政區、氣溫、濕度、雨量、風速、氣壓
+  - 過濾缺值與異常資料
+  - 整理縣市 / 鄉鎮市區資訊
+
+- [x] **Gate 3：Taiwan GIS 地圖視覺化**
+  - Leaflet 台灣互動式地圖
+  - 縣市邊界與鄉鎮市區邊界
+  - 縣市名稱與行政區名稱
+  - 測站氣溫 Marker
+  - 氣溫色階圖例
+  - Hover 高亮與點擊縣市切換
+
+- [x] **Gate 4：互動式資料展示**
+  - 縣市下拉選單
+  - 測站 / 行政區搜尋
+  - 選取縣市後只顯示該縣市測站
+  - 顯示該縣市測站氣溫折線圖
+  - 顯示該縣市即時資料表格
+  - 點擊測站查看詳細天氣資訊
+
+- [x] **Gate 5：GitHub Pages 部署**
+  - GitHub Repository 版本管理
+  - GitHub Pages 線上展示
+  - 可透過公開網址直接開啟並取得 CWA 即時資料
+
+## 目前網站功能
+
+- 台灣即時氣象 GIS 地圖
+- CWA `O-A0003-001` 自動氣象站即時觀測資料
+- 各縣市行政邊界
+- 鄉鎮市區行政邊界與名稱
+- 縣市平均溫度與顏色標示
+- 放大後顯示各測站氣溫 Marker
 - 天氣圖示（晴、多雲、陰、雨、雷、霧等）
 - 點擊測站顯示：
   - 測站名稱
-  - 縣市 / 鄉鎮
+  - 縣市 / 行政區
   - 氣溫
   - 天氣現象
   - 相對濕度
@@ -21,117 +71,66 @@
   - 風速
   - 氣壓
   - 最新觀測時間
-- 縣市篩選
+- 縣市下拉篩選
 - 測站 / 行政區文字搜尋
-- API 最新觀測時間與本次抓取時間
-- 手動更新按鈕
-- Loading / API 錯誤提示
-- 手機 / 桌面 RWD
-- CWA API Key 僅存放在後端環境變數，不會暴露在瀏覽器或 GitHub
+- 點擊地圖縣市直接切換縣市
+- 縣市測站氣溫折線圖
+- 縣市即時氣象資料表
+- 最新 CWA 觀測時間
+- API 取得時間
+- RWD 桌面 / 行動版介面
 
-## 技術架構
+## 系統流程
 
 ```text
-Browser
-  │
-  ├─ Next.js UI
-  │   └─ Leaflet map + station markers
-  │
-  └─ GET /api/weather
-       │
-       ├─ CWA O-A0003-001
-       └─ fallback: O-A0001-001
+GitHub Pages
+    │
+    ▼
+index.html / style.css / script.js
+    │
+    ├── CWA Open Data API
+    │      └── O-A0003-001
+    │
+    ├── Leaflet Map
+    │      ├── Taiwan County Boundaries
+    │      ├── Township / District Boundaries
+    │      └── Weather Station Markers
+    │
+    └── Chart.js
+           ├── County Temperature Line Chart
+           └── County Weather Data Table
 ```
 
-### 技術
+## 使用技術
 
-- Next.js 14
-- React 18
-- Leaflet 1.9（CDN）
+- HTML5
+- CSS3
+- Vanilla JavaScript
+- Leaflet 1.9
+- Chart.js
+- TopoJSON
+- Taiwan GIS GeoJSON / TopoJSON
 - Central Weather Administration OpenData API
-- Esri World Dark Gray Base map
-
-## 安裝
-
-```bash
-npm install
-```
-
-複製環境變數：
-
-```bash
-cp .env.local.example .env.local
-```
-
-Windows PowerShell：
-
-```powershell
-Copy-Item .env.local.example .env.local
-```
-
-接著編輯 `.env.local`：
-
-```env
-CWA_API_KEY=你的中央氣象署_API_KEY
-```
-
-> 請勿把 `.env.local` commit 到 GitHub。專案已在 `.gitignore` 排除。
-
-## 執行
-
-```bash
-npm run dev
-```
-
-瀏覽：
-
-```text
-http://localhost:3000
-```
-
-## Production build
-
-```bash
-npm run build
-npm run start
-```
+- Esri World Dark Gray Base Map
+- GitHub Pages
 
 ## CWA API
 
-主要使用：
+本作業主要使用：
 
 ```text
 O-A0003-001
 ```
 
-備援：
+資料來源：
 
-```text
-O-A0001-001
-```
+**交通部中央氣象署 OpenData**
 
-API route：
-
-```text
-GET /api/weather
-```
-
-前端不會直接向 CWA 帶授權碼請求，而是透過 Next.js 後端 API route 呼叫，因此 `CWA_API_KEY` 不會出現在 browser source code。
-
-## 資料清洗
-
-後端會忽略：
-
-- 缺少經緯度的測站
-- 缺少氣溫的測站
-- 無法轉換成數值的資料
-- 常見 CWA 缺值，例如 `-99`、`-999`
-- 明顯不合理的氣溫（低於 -20°C 或高於 50°C）
-- 台灣合理範圍以外的座標
+網站載入時由瀏覽器直接呼叫 CWA API，取得即時自動氣象站觀測資料。
 
 ## 氣溫色階
 
-| 氣溫 | 顏色概念 |
+| 氣溫 | 地圖顏色 |
 | --- | --- |
 | < 10°C | 深藍 |
 | 10–15°C | 藍 |
@@ -141,41 +140,52 @@ GET /api/weather
 | 30–35°C | 橘 |
 | ≥ 35°C | 紅 |
 
-## 部署
-
-可部署到 Vercel。部署後在 Project Settings → Environment Variables 設定：
+## 專案結構
 
 ```text
-CWA_API_KEY
+0923/
+├── index.html
+├── style.css
+├── script.js
+├── taiwan-counties.geojson
+├── README.md
+└── docs/
+    └── demo.png        # 待加入網站截圖
 ```
 
-不要把真實 API Key 寫進任何 GitHub 檔案。
+## Live Demo
 
-## 作業需求對照
+直接開啟：
 
-- [x] 台灣互動式氣象地圖
-- [x] CWA OpenData
-- [x] `O-A0003-001`
-- [x] 測站氣溫 marker
-- [x] 氣溫分級顏色
-- [x] marker popup 詳細資訊
-- [x] 最新 CWA 觀測時間
-- [x] 手動更新
-- [x] CWA API Key 僅後端使用
-- [x] API / map 錯誤處理
-- [x] README 設定說明
-- [x] 縣市搜尋 / 篩選
-- [x] 天氣圖示
-- [x] RWD
+https://jjcybertools.github.io/nchu_AIoT_Homework/0923/
+
+## Repository
+
+https://github.com/JJcyberTools/nchu_AIoT_Homework/tree/main/0923
+
+## 後續延伸
+
+依照後續課程內容，可再加入：
+
+- CWA 天氣預報資料
+- 日期選擇
+- 一週最高 / 最低溫時間序列
+- SQLite 氣象資料庫
+- 歷史資料查詢
+- Streamlit Dashboard
+- ETL 資料處理流程
+- 更多 AIoT / AI 分析功能
 
 ## 參考
 
-- 課程：AIoT-DA L3 AI vibe coding 天氣預報 (2026.9.23) HW1
-- Central Weather Administration OpenData Platform
+- AIoT-DA L3 AI Vibe Coding 天氣預報 HW1
+- Central Weather Administration OpenData
 - Leaflet
+- Chart.js
+- Taiwan Atlas / Taiwan GIS
 - AirBox
 - `huanchen1107/taiwan-weather-map`
 
-## 注意
+---
 
-本專案的 UI 與程式為重新製作，參考滿分範本的需求與架構方向，但沒有直接複製其完整程式碼。
+**AIoT L3 · CWA Open Data · Taiwan Weather GIS Dashboard**
