@@ -3,7 +3,12 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 
 const CWA_BASE = "https://opendata.cwa.gov.tw/api/v1/rest/datastore";
-const PRIMARY = process.env.CWA_PRIMARY_DATASET || "O-A0003-001";
+
+const CWA_API_KEY =
+  process.env.CWA_API_KEY ||
+  "CWA-55FDA6D3-A43C-4AE0-BB30-E62D5F684FB2";
+
+const PRIMARY = "O-A0003-001";
 const FALLBACK = process.env.CWA_FALLBACK_DATASET || "O-A0001-001";
 const INVALID = new Set([-99, -990, -991, -9991, -9997, -9998, -9999]);
 
