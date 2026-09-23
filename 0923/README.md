@@ -10,10 +10,10 @@ https://jjcybertools.github.io/nchu_AIoT_Homework/0923/
 **GitHub source:**  
 https://github.com/JJcyberTools/nchu_AIoT_Homework/tree/main/0923
 
-<!--
-圖片截圖完成後，可以把圖片放到 0923/docs/demo.png，再取消下一行註解：
-![Live Demo Snapshot](docs/demo.png)
--->
+<img width="1903" height="966" alt="image" src="https://github.com/user-attachments/assets/4d26b5a1-5042-43d5-8472-aa3d6b650ae0" />
+
+<img width="1901" height="975" alt="image" src="https://github.com/user-attachments/assets/8b702092-34b5-49a7-bd25-be8231afd177" />
+
 
 本作業以中央氣象署（CWA）真實 Open Data 為資料來源，從 API 資料取得開始，將即時觀測資料整理後，結合 Leaflet、Taiwan GIS 行政區邊界與互動式圖表，在 GitHub Pages 建立可直接操作的 Taiwan Weather GIS Web。
 
