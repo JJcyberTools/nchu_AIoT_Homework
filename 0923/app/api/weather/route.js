@@ -120,7 +120,7 @@ function summarize(stations) {
 }
 
 export async function GET() {
-  const apiKey = process.env.CWA_API_KEY;
+  const apiKey = CWA_API_KEY;
   if (!apiKey) {
     return NextResponse.json(
       {
