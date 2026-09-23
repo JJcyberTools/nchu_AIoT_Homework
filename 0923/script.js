@@ -26,6 +26,7 @@ const countyBoundaryLayer = L.layerGroup().addTo(map);
 const countyNameLayer = L.layerGroup().addTo(map);
 const districtBoundaryLayer = L.layerGroup().addTo(map);
 const districtNameLayer = L.layerGroup().addTo(map);
+const regionLabelLayer = L.layerGroup().addTo(map);
 let stations = [];
 let countyGeoJson = null;
 let townGeoJson = null;
@@ -113,6 +114,29 @@ function canonicalCountyName(name) {
 function countyNamesEqual(a, b) {
   return canonicalCountyName(a) === canonicalCountyName(b);
 }
+
+const WEATHER_REGIONS = [
+  {
+    name: "北部",
+    counties: ["臺北市","新北市","基隆市","桃園市","新竹市","新竹縣","宜蘭縣"],
+    center: [24.95, 121.15]
+  },
+  {
+    name: "中部",
+    counties: ["苗栗縣","臺中市","彰化縣","南投縣","雲林縣"],
+    center: [23.95, 120.78]
+  },
+  {
+    name: "南部",
+    counties: ["嘉義市","嘉義縣","臺南市","高雄市","屏東縣","澎湖縣"],
+    center: [22.82, 120.45]
+  },
+  {
+    name: "東部",
+    counties: ["花蓮縣","臺東縣"],
+    center: [23.55, 121.30]
+  }
+];
 
 function normalizeStation(station) {
   const coords = station?.GeoInfo?.Coordinates || [];
@@ -378,6 +402,58 @@ function renderCountyDataPanel() {
   });
 }
 
+
+function regionAverageTemperature(region) {
+  const values = stations
+    .filter(s => region.counties.some(c => countyNamesEqual(s.county, c)))
+    .map(s => s.temperature)
+    .filter(v => typeof v === "number");
+  if (!values.length) return null;
+  return values.reduce((a,b) => a + b, 0) / values.length;
+}
+
+function regionIcon(region) {
+  const temp = regionAverageTemperature(region);
+  const color = temp === null ? "#cbd5e1" : tempColor(temp);
+  const tempText = temp === null ? "" : `${temp.toFixed(1)}°`;
+  return L.divIcon({
+    className: "region-label-wrap",
+    html: `<div class="region-label" style="--region-color:${color}">
+      <strong>${region.name}</strong>
+      <span>${tempText}</span>
+    </div>`,
+    iconSize: [94, 44],
+    iconAnchor: [47, 22]
+  });
+}
+
+function fitToRegion(region) {
+  if (!countyGeoJson) return;
+  const features = countyGeoJson.features.filter(feature => {
+    const county = feature?.properties?.COUNTYNAME || feature?.properties?.name || "";
+    return region.counties.some(c => countyNamesEqual(county, c));
+  });
+  if (!features.length) return;
+  const layer = L.geoJSON({ type: "FeatureCollection", features });
+  map.fitBounds(layer.getBounds(), { padding: [30,30], maxZoom: 8 });
+}
+
+function renderRegionLabels() {
+  regionLabelLayer.clearLayers();
+
+  if (els.countySelect.value || map.getZoom() > 8) return;
+
+  WEATHER_REGIONS.forEach(region => {
+    L.marker(region.center, {
+      icon: regionIcon(region),
+      title: region.name,
+      keyboard: true
+    })
+      .on("click", () => fitToRegion(region))
+      .addTo(regionLabelLayer);
+  });
+}
+
 function renderMapMarkers() {
   const filtered = getFilteredStations();
   markerLayer.clearLayers();
@@ -425,6 +501,7 @@ function focusFilteredStations() {
     renderCountyLayers();
     renderDistrictLayers();
     renderCountyDataPanel();
+    renderRegionLabels();
     return;
   }
 
@@ -446,6 +523,7 @@ function focusFilteredStations() {
   renderCountyLayers();
   renderDistrictLayers();
   renderCountyDataPanel();
+  renderRegionLabels();
 }
 
 function countyAverageTemperature(name) {
@@ -509,6 +587,8 @@ function chooseCounty(name, bounds) {
   renderMapMarkers();
   renderCountyLayers();
   renderDistrictLayers();
+  renderCountyDataPanel();
+  renderRegionLabels();
 }
 
 function renderCountyLayers() {
@@ -686,6 +766,7 @@ async function loadWeatherOnce() {
     renderCountyLayers();
     renderDistrictLayers();
     renderCountyDataPanel();
+    renderRegionLabels();
 
     const latest = stations.map(s => s.observedAt).filter(Boolean).sort().at(-1);
     els.updatedAt.textContent = formatTime(latest);
@@ -704,6 +785,7 @@ map.on("zoomend", () => {
   renderMapMarkers();
   renderCountyLayers();
   renderDistrictLayers();
+  renderRegionLabels();
 });
 
 loadCountyBoundaries();
