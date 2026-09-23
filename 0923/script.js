@@ -25,8 +25,6 @@ const markerLayer = L.layerGroup().addTo(map);
 let stations = [];
 
 const els = {
-  refreshBtn: document.getElementById("refreshBtn"),
-  retryBtn: document.getElementById("retryBtn"),
   countySelect: document.getElementById("countySelect"),
   searchInput: document.getElementById("searchInput"),
   stationCount: document.getElementById("stationCount"),
@@ -200,11 +198,9 @@ function renderStations() {
   }
 }
 
-async function loadWeather() {
-  els.loading.hidden = false;
-  els.errorToast.hidden = true;
-  els.refreshBtn.disabled = true;
-  els.refreshBtn.textContent = "更新中…";
+async function loadWeatherOnce() {
+  els.loading.style.display = "grid";
+  els.errorToast.style.display = "none";
 
   try {
     const response = await fetch(API_URL, { cache: "no-store" });
@@ -228,17 +224,13 @@ async function loadWeather() {
     els.fetchTime.textContent = `API 取得：${formatTime(new Date().toISOString())}`;
   } catch (error) {
     els.errorText.textContent = error instanceof Error ? error.message : "未知錯誤";
-    els.errorToast.hidden = false;
+    els.errorToast.style.display = "grid";
   } finally {
-    els.loading.hidden = true;
-    els.refreshBtn.disabled = false;
-    els.refreshBtn.textContent = "↻ 更新資料";
+    els.loading.style.display = "none";
   }
 }
 
-els.refreshBtn.addEventListener("click", loadWeather);
-els.retryBtn.addEventListener("click", loadWeather);
 els.countySelect.addEventListener("change", renderStations);
 els.searchInput.addEventListener("input", renderStations);
 
-loadWeather();
+loadWeatherOnce();
