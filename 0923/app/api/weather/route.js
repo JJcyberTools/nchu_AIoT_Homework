@@ -121,16 +121,7 @@ function summarize(stations) {
 
 export async function GET() {
   const apiKey = CWA_API_KEY;
-  if (!apiKey) {
-    return NextResponse.json(
-      {
-        success: false,
-        error:
-          "尚未設定 CWA_API_KEY。請複製 .env.local.example 為 .env.local 並填入中央氣象署 API Key。",
-      },
-      { status: 503 }
-    );
-  }
+
 
   let result;
   let primaryError = null;
