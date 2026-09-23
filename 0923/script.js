@@ -24,8 +24,11 @@ L.control.zoom({ position: "bottomright" }).addTo(map);
 const markerLayer = L.layerGroup().addTo(map);
 const countyBoundaryLayer = L.layerGroup().addTo(map);
 const countyNameLayer = L.layerGroup().addTo(map);
+const districtBoundaryLayer = L.layerGroup().addTo(map);
+const districtNameLayer = L.layerGroup().addTo(map);
 let stations = [];
 let countyGeoJson = null;
+let townGeoJson = null;
 
 const els = {
   countySelect: document.getElementById("countySelect"),
@@ -257,28 +260,54 @@ function renderMapMarkers() {
   }
 }
 
+function selectedCountyFeature(name) {
+  if (!countyGeoJson || !name) return null;
+  return countyGeoJson.features.find(feature => {
+    const county = feature?.properties?.COUNTYNAME || feature?.properties?.name || "";
+    return county === name;
+  }) || null;
+}
+
+function fitToCounty(name) {
+  const feature = selectedCountyFeature(name);
+  if (!feature) return false;
+  const layer = L.geoJSON(feature);
+  map.fitBounds(layer.getBounds(), { padding: [26, 26], maxZoom: 10 });
+  if (map.getZoom() < 9) {
+    map.setZoom(9);
+  }
+  return true;
+}
+
 function focusFilteredStations() {
   const filtered = getFilteredStations();
   updateSummary(filtered);
 
   if (!filtered.length) {
     markerLayer.clearLayers();
+    renderCountyLayers();
+    renderDistrictLayers();
     return;
   }
 
-  if (els.countySelect.value || els.searchInput.value.trim()) {
+  const selectedCounty = els.countySelect.value;
+
+  if (selectedCounty) {
+    if (!fitToCounty(selectedCounty)) {
+      const bounds = L.latLngBounds(filtered.map(s => [s.lat, s.lon])).pad(0.2);
+      map.fitBounds(bounds, { maxZoom: 10 });
+    }
+  } else if (els.searchInput.value.trim()) {
     const bounds = L.latLngBounds(filtered.map(s => [s.lat, s.lon])).pad(0.2);
     map.fitBounds(bounds, { maxZoom: 10 });
-    if (map.getZoom() < 9) {
-      map.setView(bounds.getCenter(), 9);
-    }
   } else {
     map.setView([23.7, 121.0], 7);
   }
 
   renderMapMarkers();
+  renderCountyLayers();
+  renderDistrictLayers();
 }
-
 
 function countyAverageTemperature(name) {
   const values = stations
@@ -302,22 +331,60 @@ function countyNameIcon(name, temp) {
   });
 }
 
+function districtNameIcon(county, town) {
+  return L.divIcon({
+    className: "district-map-name-wrap",
+    html: `<div class="district-map-name">
+      <span>${town}</span>
+      <small>${county}</small>
+    </div>`,
+    iconSize: [86, 36],
+    iconAnchor: [43, 18]
+  });
+}
+
+function chooseCounty(name, bounds) {
+  if (!name) return;
+  els.countySelect.value = name;
+  els.searchInput.value = "";
+  updateSummary(getFilteredStations());
+
+  if (bounds) {
+    map.fitBounds(bounds, { padding: [26,26], maxZoom: 10 });
+    if (map.getZoom() < 9) map.setZoom(9);
+  } else {
+    fitToCounty(name);
+  }
+
+  renderMapMarkers();
+  renderCountyLayers();
+  renderDistrictLayers();
+}
+
 function renderCountyLayers() {
   countyBoundaryLayer.clearLayers();
   countyNameLayer.clearLayers();
   if (!countyGeoJson) return;
 
-  const geo = L.geoJSON(countyGeoJson, {
+  const activeCounty = els.countySelect.value;
+  const features = activeCounty
+    ? countyGeoJson.features.filter(feature => {
+        const name = feature?.properties?.COUNTYNAME || feature?.properties?.name || "";
+        return name === activeCounty;
+      })
+    : countyGeoJson.features;
+
+  const geo = L.geoJSON({ type: "FeatureCollection", features }, {
     style: feature => {
       const name = feature?.properties?.COUNTYNAME || feature?.properties?.name || "";
       const temp = countyAverageTemperature(name);
-      const color = temp === null ? "#64748b" : tempColor(temp);
+      const color = temp === null ? "#94a3b8" : tempColor(temp);
       return {
         color,
-        weight: map.getZoom() >= 9 ? 2 : 1.5,
-        opacity: 0.9,
+        weight: activeCounty ? 3 : 1.6,
+        opacity: 0.95,
         fillColor: color,
-        fillOpacity: map.getZoom() >= 9 ? 0.025 : 0.07
+        fillOpacity: activeCounty ? 0.09 : 0.055
       };
     },
     onEachFeature: (feature, layer) => {
@@ -332,29 +399,79 @@ function renderCountyLayers() {
 
       layer.on({
         mouseover: e => {
-          e.target.setStyle({ weight: 3, fillOpacity: 0.18, color });
+          e.target.setStyle({ weight: 3.5, fillOpacity: 0.18, color });
           if (e.target.bringToFront) e.target.bringToFront();
         },
-        mouseout: e => {
-          geo.resetStyle(e.target);
-        },
-        click: e => {
-          map.fitBounds(e.target.getBounds(), { padding: [24,24], maxZoom: 10 });
-        }
+        mouseout: e => geo.resetStyle(e.target),
+        click: e => chooseCounty(name, e.target.getBounds())
       });
 
-      if (map.getZoom() <= 9 && name) {
+      if (!activeCounty && map.getZoom() <= 8 && name) {
         const center = layer.getBounds().getCenter();
         L.marker(center, {
           icon: countyNameIcon(name, temp),
-          interactive: false,
-          keyboard: false
-        }).addTo(countyNameLayer);
+          interactive: true,
+          keyboard: true,
+          title: name
+        })
+          .on("click", () => chooseCounty(name, layer.getBounds()))
+          .addTo(countyNameLayer);
       }
     }
   });
 
   geo.addTo(countyBoundaryLayer);
+}
+
+function renderDistrictLayers() {
+  districtBoundaryLayer.clearLayers();
+  districtNameLayer.clearLayers();
+
+  const activeCounty = els.countySelect.value;
+  if (!townGeoJson || !activeCounty) return;
+
+  const features = townGeoJson.features.filter(feature => {
+    const county = feature?.properties?.COUNTYNAME || "";
+    return county === activeCounty;
+  });
+
+  const geo = L.geoJSON({ type: "FeatureCollection", features }, {
+    style: {
+      color: "#cbd5e1",
+      weight: 1.15,
+      opacity: 0.78,
+      fillColor: "#94a3b8",
+      fillOpacity: 0.025
+    },
+    onEachFeature: (feature, layer) => {
+      const county = feature?.properties?.COUNTYNAME || activeCounty;
+      const town = feature?.properties?.TOWNNAME || "";
+
+      layer.bindTooltip(`${county} ${town}`, { sticky: true });
+
+      layer.on({
+        mouseover: e => {
+          e.target.setStyle({
+            weight: 2.2,
+            color: "#f8fafc",
+            fillOpacity: 0.12
+          });
+        },
+        mouseout: e => geo.resetStyle(e.target)
+      });
+
+      if (town) {
+        const center = layer.getBounds().getCenter();
+        L.marker(center, {
+          icon: districtNameIcon(county, town),
+          interactive: false,
+          keyboard: false
+        }).addTo(districtNameLayer);
+      }
+    }
+  });
+
+  geo.addTo(districtBoundaryLayer);
 }
 
 async function loadCountyBoundaries() {
@@ -365,6 +482,24 @@ async function loadCountyBoundaries() {
     renderCountyLayers();
   } catch (error) {
     console.warn("縣市邊界載入失敗", error);
+  }
+}
+
+async function loadTownBoundaries() {
+  try {
+    const response = await fetch(
+      "https://cdn.jsdelivr.net/npm/taiwan-atlas/towns-10t.json",
+      { cache: "force-cache" }
+    );
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const topo = await response.json();
+    if (!window.topojson || !topo?.objects?.towns) {
+      throw new Error("TopoJSON town data unavailable");
+    }
+    townGeoJson = window.topojson.feature(topo, topo.objects.towns);
+    renderDistrictLayers();
+  } catch (error) {
+    console.warn("鄉鎮市區邊界載入失敗", error);
   }
 }
 
@@ -389,6 +524,7 @@ async function loadWeatherOnce() {
     rebuildCountyOptions();
     renderMapMarkers();
     renderCountyLayers();
+    renderDistrictLayers();
 
     const latest = stations.map(s => s.observedAt).filter(Boolean).sort().at(-1);
     els.updatedAt.textContent = formatTime(latest);
@@ -406,7 +542,9 @@ els.searchInput.addEventListener("input", focusFilteredStations);
 map.on("zoomend", () => {
   renderMapMarkers();
   renderCountyLayers();
+  renderDistrictLayers();
 });
 
 loadCountyBoundaries();
+loadTownBoundaries();
 loadWeatherOnce();
