@@ -205,15 +205,63 @@ function popupHtml(s) {
 
 function rebuildCountyOptions() {
   const current = els.countySelect.value;
-  const counties = [...new Set(stations.map(s => s.county))].filter(Boolean).sort((a,b) => a.localeCompare(b, "zh-Hant"));
+
+  const northToSouthOrder = [
+    "基隆市",
+    "臺北市",
+    "新北市",
+    "桃園市",
+    "新竹市",
+    "新竹縣",
+    "苗栗縣",
+    "臺中市",
+    "彰化縣",
+    "南投縣",
+    "雲林縣",
+    "嘉義市",
+    "嘉義縣",
+    "臺南市",
+    "高雄市",
+    "屏東縣",
+    "宜蘭縣",
+    "花蓮縣",
+    "臺東縣",
+    "澎湖縣",
+    "金門縣",
+    "連江縣"
+  ];
+
+  const available = [...new Set(stations.map(s => canonicalCountyName(s.county)))]
+    .filter(Boolean);
+
+  const orderIndex = new Map(
+    northToSouthOrder.map((name, index) => [canonicalCountyName(name), index])
+  );
+
+  const counties = available.sort((a, b) => {
+    const ai = orderIndex.has(canonicalCountyName(a))
+      ? orderIndex.get(canonicalCountyName(a))
+      : 999;
+    const bi = orderIndex.has(canonicalCountyName(b))
+      ? orderIndex.get(canonicalCountyName(b))
+      : 999;
+
+    if (ai !== bi) return ai - bi;
+    return a.localeCompare(b, "zh-Hant");
+  });
+
   els.countySelect.innerHTML = '<option value="">全部縣市</option>';
+
   counties.forEach(name => {
     const option = document.createElement("option");
     option.value = name;
     option.textContent = name;
     els.countySelect.appendChild(option);
   });
-  if (counties.includes(current)) els.countySelect.value = current;
+
+  const currentMatch = counties.find(name => countyNamesEqual(name, current));
+  if (currentMatch) els.countySelect.value = currentMatch;
+
   els.countyCount.textContent = counties.length;
 }
 
