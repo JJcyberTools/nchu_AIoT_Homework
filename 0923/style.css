@@ -35,3 +35,42 @@ h1{margin:0;font-size:clamp(1.25rem,2vw,1.75rem);letter-spacing:-.03em}
   font-size:.76rem;
   white-space:nowrap;
 }
+
+.county-label-wrap{
+  background:transparent!important;
+  border:0!important;
+}
+.county-label{
+  min-width:88px;
+  padding:7px 9px 6px;
+  border:1px solid color-mix(in srgb,var(--county-color) 75%,white 25%);
+  border-radius:13px;
+  background:rgba(8,15,28,.9);
+  box-shadow:0 8px 24px rgba(0,0,0,.32),inset 0 -3px 0 var(--county-color);
+  display:grid;
+  grid-template-columns:1fr auto;
+  align-items:center;
+  gap:7px;
+  white-space:nowrap;
+  cursor:pointer;
+}
+.county-name{
+  color:var(--county-color);
+  font-size:13px;
+  font-weight:900;
+  letter-spacing:.02em;
+  text-shadow:0 1px 2px rgba(0,0,0,.75);
+}
+.county-temp{
+  color:#f8fafc;
+  font-size:13px;
+  font-weight:800;
+}
+@media(max-width:720px){
+  .county-label{
+    min-width:76px;
+    padding:6px 7px 5px;
+    gap:5px;
+  }
+  .county-name,.county-temp{font-size:11px}
+}
