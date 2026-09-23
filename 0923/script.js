@@ -91,6 +91,14 @@ function formatNumber(value, suffix = "", digits = 1) {
   return typeof value === "number" ? `${value.toFixed(digits)}${suffix}` : "—";
 }
 
+function canonicalCountyName(name) {
+  return String(name || "").trim().replace(/台/g, "臺");
+}
+
+function countyNamesEqual(a, b) {
+  return canonicalCountyName(a) === canonicalCountyName(b);
+}
+
 function normalizeStation(station) {
   const coords = station?.GeoInfo?.Coordinates || [];
   const pos = coords.find(c => c?.CoordinateName === "WGS84") || coords[0];
@@ -174,7 +182,7 @@ function getFilteredStations() {
   const county = els.countySelect.value;
   const q = els.searchInput.value.trim().toLowerCase();
   return stations.filter(s => {
-    const countyOk = !county || s.county === county;
+    const countyOk = !county || countyNamesEqual(s.county, county);
     const text = `${s.stationName} ${s.county} ${s.town}`.toLowerCase();
     return countyOk && (!q || text.includes(q));
   });
@@ -264,7 +272,7 @@ function selectedCountyFeature(name) {
   if (!countyGeoJson || !name) return null;
   return countyGeoJson.features.find(feature => {
     const county = feature?.properties?.COUNTYNAME || feature?.properties?.name || "";
-    return county === name;
+    return countyNamesEqual(county, name);
   }) || null;
 }
 
@@ -311,7 +319,7 @@ function focusFilteredStations() {
 
 function countyAverageTemperature(name) {
   const values = stations
-    .filter(s => s.county === name)
+    .filter(s => countyNamesEqual(s.county, name))
     .map(s => s.temperature)
     .filter(v => typeof v === "number");
   if (!values.length) return null;
@@ -345,15 +353,26 @@ function districtNameIcon(county, town) {
 
 function chooseCounty(name, bounds) {
   if (!name) return;
-  els.countySelect.value = name;
+
+  const matchingOption = [...els.countySelect.options].find(option =>
+    countyNamesEqual(option.value, name)
+  );
+
+  if (matchingOption) {
+    els.countySelect.value = matchingOption.value;
+  } else {
+    els.countySelect.value = name;
+  }
+
   els.searchInput.value = "";
   updateSummary(getFilteredStations());
 
+  const selectedName = els.countySelect.value || name;
   if (bounds) {
     map.fitBounds(bounds, { padding: [26,26], maxZoom: 10 });
     if (map.getZoom() < 9) map.setZoom(9);
   } else {
-    fitToCounty(name);
+    fitToCounty(selectedName);
   }
 
   renderMapMarkers();
@@ -367,43 +386,50 @@ function renderCountyLayers() {
   if (!countyGeoJson) return;
 
   const activeCounty = els.countySelect.value;
-  const features = activeCounty
-    ? countyGeoJson.features.filter(feature => {
-        const name = feature?.properties?.COUNTYNAME || feature?.properties?.name || "";
-        return name === activeCounty;
-      })
-    : countyGeoJson.features;
 
-  const geo = L.geoJSON({ type: "FeatureCollection", features }, {
+  const geo = L.geoJSON(countyGeoJson, {
     style: feature => {
       const name = feature?.properties?.COUNTYNAME || feature?.properties?.name || "";
       const temp = countyAverageTemperature(name);
       const color = temp === null ? "#94a3b8" : tempColor(temp);
+      const isActive = activeCounty && countyNamesEqual(name, activeCounty);
+
       return {
-        color,
-        weight: activeCounty ? 3 : 1.6,
-        opacity: 0.95,
+        color: isActive ? color : "#64748b",
+        weight: isActive ? 3.2 : 1.25,
+        opacity: isActive ? 1 : 0.72,
         fillColor: color,
-        fillOpacity: activeCounty ? 0.09 : 0.055
+        fillOpacity: isActive ? 0.10 : 0.018
       };
     },
     onEachFeature: (feature, layer) => {
       const name = feature?.properties?.COUNTYNAME || feature?.properties?.name || "";
       const temp = countyAverageTemperature(name);
       const color = temp === null ? "#94a3b8" : tempColor(temp);
+      const isActive = activeCounty && countyNamesEqual(name, activeCounty);
 
       layer.bindTooltip(
-        temp === null ? name : `${name} · 平均 ${temp.toFixed(1)}°C`,
+        temp === null
+          ? `${name} · 點擊切換`
+          : `${name} · 平均 ${temp.toFixed(1)}°C · 點擊切換`,
         { sticky: true }
       );
 
       layer.on({
         mouseover: e => {
-          e.target.setStyle({ weight: 3.5, fillOpacity: 0.18, color });
+          e.target.setStyle({
+            weight: 3.6,
+            opacity: 1,
+            fillOpacity: isActive ? 0.15 : 0.10,
+            color
+          });
           if (e.target.bringToFront) e.target.bringToFront();
         },
         mouseout: e => geo.resetStyle(e.target),
-        click: e => chooseCounty(name, e.target.getBounds())
+        click: e => {
+          L.DomEvent.stopPropagation(e);
+          chooseCounty(name, e.target.getBounds());
+        }
       });
 
       if (!activeCounty && map.getZoom() <= 8 && name) {
@@ -414,7 +440,10 @@ function renderCountyLayers() {
           keyboard: true,
           title: name
         })
-          .on("click", () => chooseCounty(name, layer.getBounds()))
+          .on("click", e => {
+            L.DomEvent.stopPropagation(e);
+            chooseCounty(name, layer.getBounds());
+          })
           .addTo(countyNameLayer);
       }
     }
@@ -432,7 +461,7 @@ function renderDistrictLayers() {
 
   const features = townGeoJson.features.filter(feature => {
     const county = feature?.properties?.COUNTYNAME || "";
-    return county === activeCounty;
+    return countyNamesEqual(county, activeCounty);
   });
 
   const geo = L.geoJSON({ type: "FeatureCollection", features }, {
