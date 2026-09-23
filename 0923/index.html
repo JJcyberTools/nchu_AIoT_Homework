@@ -6,7 +6,7 @@
   <title>台灣即時氣象地圖｜AIoT-DA HW1</title>
   <meta name="description" content="CWA O-A0003-001 即時氣象視覺化地圖" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
-  <link rel="stylesheet" href="./style.css?v=20260923-8" />
+  <link rel="stylesheet" href="./style.css?v=20260923-9" />
 </head>
 <body>
   <main class="app-shell">
@@ -51,6 +51,36 @@
       </div>
     </aside>
 
+    <aside id="countyDataPanel" class="county-data-panel glass" hidden>
+      <div class="county-data-head">
+        <div>
+          <b id="countyDataTitle">縣市即時氣象資料</b>
+          <small id="countyDataMeta"></small>
+        </div>
+      </div>
+
+      <div class="county-chart-wrap">
+        <canvas id="countyChart"></canvas>
+      </div>
+
+      <div class="county-table-wrap">
+        <table class="county-data-table">
+          <thead>
+            <tr>
+              <th>行政區</th>
+              <th>測站</th>
+              <th>天氣</th>
+              <th>氣溫</th>
+              <th>濕度</th>
+              <th>雨量</th>
+              <th>風速</th>
+            </tr>
+          </thead>
+          <tbody id="countyTableBody"></tbody>
+        </table>
+      </div>
+    </aside>
+
     <aside class="legend glass">
       <b>氣溫圖例</b>
       <div><i style="background:#2563eb"></i>&lt; 10°C</div>
@@ -78,6 +108,7 @@
   </main>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>\n  <script src="https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js"></script>
-  <script src="./script.js?v=20260923-8"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="./script.js?v=20260923-9"></script>
 </body>
 </html>
