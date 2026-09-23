@@ -42,8 +42,15 @@ const els = {
   summaryScope: document.getElementById("summaryScope"),
   loading: document.getElementById("loading"),
   errorToast: document.getElementById("errorToast"),
-  errorText: document.getElementById("errorText")
+  errorText: document.getElementById("errorText"),
+  countyDataPanel: document.getElementById("countyDataPanel"),
+  countyDataTitle: document.getElementById("countyDataTitle"),
+  countyDataMeta: document.getElementById("countyDataMeta"),
+  countyTableBody: document.getElementById("countyTableBody"),
+  countyChartCanvas: document.getElementById("countyChart")
 };
+
+let countyChart = null;
 
 const invalidValues = new Set([-99, -990, -991, -9991, -9997, -9998, -9999]);
 
@@ -92,7 +99,15 @@ function formatNumber(value, suffix = "", digits = 1) {
 }
 
 function canonicalCountyName(name) {
-  return String(name || "").trim().replace(/台/g, "臺");
+  let value = String(name || "").trim().replace(/台/g, "臺");
+  const aliases = {
+    "桃園縣": "桃園市",
+    "臺北縣": "新北市",
+    "臺中縣": "臺中市",
+    "臺南縣": "臺南市",
+    "高雄縣": "高雄市"
+  };
+  return aliases[value] || value;
 }
 
 function countyNamesEqual(a, b) {
@@ -249,6 +264,120 @@ function updateSummary(filtered) {
   els.maxTemp.textContent = temps.length ? `${Math.max(...temps).toFixed(1)}°` : "—";
 }
 
+
+function escapeText(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function renderCountyDataPanel() {
+  const county = els.countySelect.value;
+
+  if (!county) {
+    els.countyDataPanel.hidden = true;
+    if (countyChart) {
+      countyChart.destroy();
+      countyChart = null;
+    }
+    return;
+  }
+
+  const countyStations = stations
+    .filter(s => countyNamesEqual(s.county, county))
+    .sort((a, b) =>
+      (a.town || "").localeCompare(b.town || "", "zh-Hant") ||
+      a.stationName.localeCompare(b.stationName, "zh-Hant")
+    );
+
+  els.countyDataPanel.hidden = false;
+  els.countyDataTitle.textContent = `${county} 即時氣象資料`;
+  els.countyDataMeta.textContent =
+    `${countyStations.length} 個測站 · CWA ${DATASET} · ${formatTime(
+      countyStations.map(s => s.observedAt).filter(Boolean).sort().at(-1)
+    )}`;
+
+  els.countyTableBody.innerHTML = countyStations.map(s => `
+    <tr>
+      <td>${escapeText(s.town || "—")}</td>
+      <td>${escapeText(s.stationName)}</td>
+      <td>${escapeText(s.weather || "—")}</td>
+      <td class="num">${formatNumber(s.temperature, "°C")}</td>
+      <td class="num">${formatNumber(s.humidity, "%", 0)}</td>
+      <td class="num">${formatNumber(s.precipitation, " mm")}</td>
+      <td class="num">${formatNumber(s.windSpeed, " m/s")}</td>
+    </tr>
+  `).join("");
+
+  if (!window.Chart) return;
+
+  if (countyChart) countyChart.destroy();
+
+  const labels = countyStations.map(s =>
+    s.town ? `${s.town}・${s.stationName}` : s.stationName
+  );
+
+  countyChart = new Chart(els.countyChartCanvas, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [{
+        label: "測站氣溫 °C",
+        data: countyStations.map(s => s.temperature),
+        borderWidth: 2,
+        tension: 0.25,
+        pointRadius: countyStations.length > 30 ? 2 : 3,
+        pointHoverRadius: 5,
+        fill: false
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: "nearest", intersect: false },
+      plugins: {
+        legend: {
+          labels: { color: "#e2e8f0" }
+        },
+        tooltip: {
+          callbacks: {
+            afterLabel: context => {
+              const s = countyStations[context.dataIndex];
+              return [
+                `天氣：${s.weather || "—"}`,
+                `濕度：${formatNumber(s.humidity, "%", 0)}`,
+                `雨量：${formatNumber(s.precipitation, " mm")}`
+              ];
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: "#94a3b8",
+            maxRotation: 60,
+            minRotation: 35,
+            autoSkip: true,
+            maxTicksLimit: 12
+          },
+          grid: { color: "rgba(148,163,184,.08)" }
+        },
+        y: {
+          ticks: {
+            color: "#94a3b8",
+            callback: value => `${value}°`
+          },
+          grid: { color: "rgba(148,163,184,.12)" }
+        }
+      }
+    }
+  });
+}
+
 function renderMapMarkers() {
   const filtered = getFilteredStations();
   markerLayer.clearLayers();
@@ -295,6 +424,7 @@ function focusFilteredStations() {
     markerLayer.clearLayers();
     renderCountyLayers();
     renderDistrictLayers();
+    renderCountyDataPanel();
     return;
   }
 
@@ -315,6 +445,7 @@ function focusFilteredStations() {
   renderMapMarkers();
   renderCountyLayers();
   renderDistrictLayers();
+  renderCountyDataPanel();
 }
 
 function countyAverageTemperature(name) {
@@ -554,6 +685,7 @@ async function loadWeatherOnce() {
     renderMapMarkers();
     renderCountyLayers();
     renderDistrictLayers();
+    renderCountyDataPanel();
 
     const latest = stations.map(s => s.observedAt).filter(Boolean).sort().at(-1);
     els.updatedAt.textContent = formatTime(latest);
