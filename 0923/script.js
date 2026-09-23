@@ -22,7 +22,10 @@ L.tileLayer(
 L.control.zoom({ position: "bottomright" }).addTo(map);
 
 const markerLayer = L.layerGroup().addTo(map);
+const countyBoundaryLayer = L.layerGroup().addTo(map);
+const countyNameLayer = L.layerGroup().addTo(map);
 let stations = [];
+let countyGeoJson = null;
 
 const els = {
   countySelect: document.getElementById("countySelect"),
@@ -251,30 +254,7 @@ function renderMapMarkers() {
         .bindPopup(popupHtml(s))
         .addTo(markerLayer);
     });
-    return;
   }
-
-  aggregateByCounty(filtered).forEach(county => {
-    const marker = L.marker([county.lat, county.lon], {
-      icon: countyIcon(county),
-      title: `${county.county} 平均 ${county.avgTemp.toFixed(1)}°C`
-    });
-
-    marker.on("click", () => {
-      const bounds = L.latLngBounds(county.bounds).pad(0.25);
-      map.fitBounds(bounds, { maxZoom: 10 });
-      if (map.getZoom() < 9) {
-        map.setView(bounds.getCenter(), 9);
-      }
-    });
-
-    marker.bindTooltip(
-      `${county.county} · ${county.count} 個測站 · 平均 ${county.avgTemp.toFixed(1)}°C`,
-      { direction: "top", offset: [0, -18] }
-    );
-
-    marker.addTo(markerLayer);
-  });
 }
 
 function focusFilteredStations() {
@@ -299,6 +279,95 @@ function focusFilteredStations() {
   renderMapMarkers();
 }
 
+
+function countyAverageTemperature(name) {
+  const values = stations
+    .filter(s => s.county === name)
+    .map(s => s.temperature)
+    .filter(v => typeof v === "number");
+  if (!values.length) return null;
+  return values.reduce((a,b) => a + b, 0) / values.length;
+}
+
+function countyNameIcon(name, temp) {
+  const color = temp === null ? "#cbd5e1" : tempColor(temp);
+  const tempText = temp === null ? "" : ` ${temp.toFixed(1)}°`;
+  return L.divIcon({
+    className: "county-map-name-wrap",
+    html: `<div class="county-map-name" style="--county-color:${color}">
+      <span>${name}</span><small>${tempText}</small>
+    </div>`,
+    iconSize: [96, 34],
+    iconAnchor: [48, 17]
+  });
+}
+
+function renderCountyLayers() {
+  countyBoundaryLayer.clearLayers();
+  countyNameLayer.clearLayers();
+  if (!countyGeoJson) return;
+
+  const geo = L.geoJSON(countyGeoJson, {
+    style: feature => {
+      const name = feature?.properties?.COUNTYNAME || feature?.properties?.name || "";
+      const temp = countyAverageTemperature(name);
+      const color = temp === null ? "#64748b" : tempColor(temp);
+      return {
+        color,
+        weight: map.getZoom() >= 9 ? 2 : 1.5,
+        opacity: 0.9,
+        fillColor: color,
+        fillOpacity: map.getZoom() >= 9 ? 0.025 : 0.07
+      };
+    },
+    onEachFeature: (feature, layer) => {
+      const name = feature?.properties?.COUNTYNAME || feature?.properties?.name || "";
+      const temp = countyAverageTemperature(name);
+      const color = temp === null ? "#94a3b8" : tempColor(temp);
+
+      layer.bindTooltip(
+        temp === null ? name : `${name} · 平均 ${temp.toFixed(1)}°C`,
+        { sticky: true }
+      );
+
+      layer.on({
+        mouseover: e => {
+          e.target.setStyle({ weight: 3, fillOpacity: 0.18, color });
+          if (e.target.bringToFront) e.target.bringToFront();
+        },
+        mouseout: e => {
+          geo.resetStyle(e.target);
+        },
+        click: e => {
+          map.fitBounds(e.target.getBounds(), { padding: [24,24], maxZoom: 10 });
+        }
+      });
+
+      if (map.getZoom() <= 9 && name) {
+        const center = layer.getBounds().getCenter();
+        L.marker(center, {
+          icon: countyNameIcon(name, temp),
+          interactive: false,
+          keyboard: false
+        }).addTo(countyNameLayer);
+      }
+    }
+  });
+
+  geo.addTo(countyBoundaryLayer);
+}
+
+async function loadCountyBoundaries() {
+  try {
+    const response = await fetch("./taiwan-counties.geojson", { cache: "force-cache" });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    countyGeoJson = await response.json();
+    renderCountyLayers();
+  } catch (error) {
+    console.warn("縣市邊界載入失敗", error);
+  }
+}
+
 async function loadWeatherOnce() {
   els.loading.style.display = "grid";
   els.errorToast.style.display = "none";
@@ -319,6 +388,7 @@ async function loadWeatherOnce() {
 
     rebuildCountyOptions();
     renderMapMarkers();
+    renderCountyLayers();
 
     const latest = stations.map(s => s.observedAt).filter(Boolean).sort().at(-1);
     els.updatedAt.textContent = formatTime(latest);
@@ -333,6 +403,10 @@ async function loadWeatherOnce() {
 
 els.countySelect.addEventListener("change", focusFilteredStations);
 els.searchInput.addEventListener("input", focusFilteredStations);
-map.on("zoomend", renderMapMarkers);
+map.on("zoomend", () => {
+  renderMapMarkers();
+  renderCountyLayers();
+});
 
+loadCountyBoundaries();
 loadWeatherOnce();
