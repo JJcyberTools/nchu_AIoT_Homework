@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>台灣即時氣象地圖｜AIoT-DA HW1</title>
+  <meta name="description" content="CWA O-A0003-001 即時氣象視覺化地圖" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <div id="map" class="map" aria-label="台灣即時氣象地圖"></div>
+
+    <header class="topbar glass">
+      <div>
+        <p class="eyebrow">NCHU · AIoT-DA HW1 · CWA OpenData</p>
+        <h1>台灣即時氣象視覺化地圖</h1>
+      </div>
+      <button id="refreshBtn" type="button">↻ 更新資料</button>
+    </header>
+
+    <section class="search-panel glass" aria-label="搜尋與篩選">
+      <label>
+        <span>縣市篩選</span>
+        <select id="countySelect">
+          <option value="">全部縣市</option>
+        </select>
+      </label>
+      <label>
+        <span>搜尋測站 / 行政區</span>
+        <input id="searchInput" type="search" placeholder="例如：臺中、梧棲、臺北" />
+      </label>
+      <div class="filter-status">顯示 <strong id="stationCount">0</strong> 個測站</div>
+    </section>
+
+    <aside class="summary-panel glass">
+      <div class="summary-title">
+        <span>🌤️</span>
+        <div><b>即時概況</b><small id="summaryScope">全台</small></div>
+      </div>
+      <div class="summary-grid">
+        <article><small>最低溫</small><strong id="minTemp">—</strong></article>
+        <article><small>最高溫</small><strong id="maxTemp">—</strong></article>
+        <article><small>資料集</small><strong class="small-value">O-A0003-001</strong></article>
+        <article><small>縣市數</small><strong id="countyCount">—</strong></article>
+      </div>
+      <div class="updated-card">
+        <span class="live-dot"></span>
+        <div><small>最新 CWA 觀測時間</small><b id="updatedAt">—</b></div>
+      </div>
+    </aside>
+
+    <aside class="legend glass">
+      <b>氣溫圖例</b>
+      <div><i style="background:#2563eb"></i>&lt; 10°C</div>
+      <div><i style="background:#0ea5e9"></i>10–15°C</div>
+      <div><i style="background:#10b981"></i>15–20°C</div>
+      <div><i style="background:#84cc16"></i>20–25°C</div>
+      <div><i style="background:#f59e0b"></i>25–30°C</div>
+      <div><i style="background:#f97316"></i>30–35°C</div>
+      <div><i style="background:#ef4444"></i>≥ 35°C</div>
+    </aside>
+
+    <footer class="footer-status glass">
+      <span>資料來源：交通部中央氣象署</span>
+      <span id="fetchTime">API 取得：—</span>
+    </footer>
+
+    <div id="loading" class="overlay-message">
+      <div class="message-card glass">正在取得中央氣象署即時資料…</div>
+    </div>
+
+    <div id="errorToast" class="error-toast" hidden>
+      <strong>⚠️ 無法取得資料</strong>
+      <span id="errorText"></span>
+      <button id="retryBtn" type="button">重試</button>
+    </div>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="./script.js"></script>
+</body>
+</html>
