@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>個人專屬時鐘與時間儀表板 | Personal Time & Identity Hub</title>
+  <meta name="description" content="精緻優雅的個人化時間儀表板，具備即時時鐘、動態問候、姓名自訂與全球時區功能。">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Noto+Sans+TC:wght@300;400;500;700;900&family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-theme="aurora">
+  <!-- 動態背景環境光暈 -->
+  <div class="ambient-glow glow-1" aria-hidden="true"></div>
+  <div class="ambient-glow glow-2" aria-hidden="true"></div>
+  <div class="ambient-glow glow-3" aria-hidden="true"></div>
+
+  <div class="app-container">
+    <!-- 頂部導航與設定列 -->
+    <header class="top-nav">
+      <div class="logo-area">
+        <div class="pulse-dot"></div>
+        <span class="logo-text">CHRONO &bull; IDENTITY</span>
+      </div>
+      <div class="controls-area">
+        <button id="clock-mode-btn" class="icon-btn" title="切換數位 / 指針時鐘" aria-label="切換數位與指針時鐘">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <span class="btn-label" id="mode-label">指針模式</span>
+        </button>
+        <button id="format-toggle-btn" class="icon-btn" title="切換 12/24 小時制" aria-label="切換 12/24 小時制">
+          <span id="format-badge" class="badge">24H</span>
+        </button>
+        <div class="theme-picker">
+          <button id="theme-btn" class="icon-btn" title="切換主題風格" aria-label="切換主題風格">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+            </svg>
+            <span class="btn-label">主題風格</span>
+          </button>
+          <div class="theme-dropdown" id="theme-dropdown">
+            <button class="theme-opt active" data-theme-val="aurora">極光魅影 (Aurora)</button>
+            <button class="theme-opt" data-theme-val="cyber">電馭霓虹 (Cyber)</button>
+            <button class="theme-opt" data-theme-val="sunset">暮霞煦陽 (Sunset)</button>
+            <button class="theme-opt" data-theme-val="midnight">曜石深邃 (Midnight)</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- 主體內容區塊 -->
+    <main class="main-card glass-panel" id="main-content">
+      <!-- 歡迎與個人姓名展示區塊 -->
+      <section class="identity-section" aria-label="個人身份與動態問候">
+        <div class="greeting-badge">
+          <span id="greeting-icon" class="greeting-icon">✨</span>
+          <span id="greeting-text">早安，美好的一天</span>
+        </div>
+        
+        <div class="name-display-wrapper">
+          <h1 class="user-greeting-heading">
+            <span class="salutation-prefix">您好，我是</span>
+            <span id="user-name-text" class="highlight-name" title="點擊即可修改姓名">使用者</span>
+          </h1>
+          <button id="edit-name-btn" class="edit-pill-btn" title="點擊修改名字" aria-label="編輯名字">
+            <svg class="edit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            <span>修改姓名</span>
+          </button>
+        </div>
+        <p class="subtitle" id="dynamic-quote">「掌握時間的人，就能掌握生命的節奏。」</p>
+      </section>
+
+      <!-- 時間展示區塊 -->
+      <section class="time-display-section" aria-label="即時時間展示">
+        <!-- 數位時鐘視圖 -->
+        <div id="digital-clock-view" class="digital-view active">
+          <div class="clock-digits-container">
+            <div class="digit-box" id="hours-box">
+              <span class="digit" id="clock-hours">00</span>
+              <span class="digit-unit">時 / HR</span>
+            </div>
+            <span class="clock-separator">:</span>
+            <div class="digit-box" id="minutes-box">
+              <span class="digit" id="clock-minutes">00</span>
+              <span class="digit-unit">分 / MIN</span>
+            </div>
+            <span class="clock-separator">:</span>
+            <div class="digit-box" id="seconds-box">
+              <span class="digit" id="clock-seconds">00</span>
+              <span class="digit-unit">秒 / SEC</span>
+            </div>
+            <div class="ampm-box" id="ampm-container" style="display: none;">
+              <span id="clock-ampm">AM</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 指針時鐘視圖 (預設隱藏) -->
+        <div id="analog-clock-view" class="analog-view">
+          <div class="analog-clock-face">
+            <div class="center-nut"></div>
+            <div class="hand hour-hand" id="analog-hour"></div>
+            <div class="hand minute-hand" id="analog-minute"></div>
+            <div class="hand second-hand" id="analog-second"></div>
+            <!-- 時鐘刻度 -->
+            <div class="clock-marks">
+              <span class="mark m12">12</span>
+              <span class="mark m3">3</span>
+              <span class="mark m6">6</span>
+              <span class="mark m9">9</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 完整日期與星期資訊 -->
+        <div class="date-info-bar">
+          <div class="date-item">
+            <svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="16" y1="2" x2="16" y2="6"></line>
+              <line x1="8" y1="2" x2="8" y2="6"></line>
+              <line x1="3" y1="10" x2="21" y2="10"></line>
+            </svg>
+            <span id="full-date-text">2026年 09月 16日</span>
+          </div>
+          <div class="date-divider">&bull;</div>
+          <div class="date-item">
+            <span id="day-of-week" class="badge-day">星期三</span>
+          </div>
+          <div class="date-divider">&bull;</div>
+          <div class="date-item">
+            <svg class="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="2" y1="12" x2="22" y2="12"></line>
+              <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+            <span id="timezone-text">GMT+8 (台北時間)</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 今日進度條與數據小工具 -->
+      <section class="dashboard-metrics" aria-label="時間進度概況">
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-title">今日已度過</span>
+            <span class="metric-value" id="day-progress-pct">0.0%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-bar" id="day-progress-bar" style="width: 0%"></div>
+          </div>
+          <div class="metric-footer">
+            <span id="day-progress-detail">剩餘約 -- 小時</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">
+            <span class="metric-title">當年度週次</span>
+            <span class="metric-value" id="week-number-val">第 38 週</span>
+          </div>
+          <div class="year-progress-info">
+            <span id="year-days-left">距離新的一年還有 -- 天</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 世界各大城市快速對照 -->
+      <section class="world-time-section" aria-label="國際時區一覽">
+        <div class="world-time-title">國際主要城市時間</div>
+        <div class="world-chips-grid">
+          <div class="world-chip" data-timezone="Asia/Tokyo">
+            <span class="city-name">東京 (Tokyo)</span>
+            <span class="city-time" id="city-tokyo">--:--</span>
+          </div>
+          <div class="world-chip" data-timezone="Europe/London">
+            <span class="city-name">倫敦 (London)</span>
+            <span class="city-time" id="city-london">--:--</span>
+          </div>
+          <div class="world-chip" data-timezone="America/New_York">
+            <span class="city-name">紐約 (New York)</span>
+            <span class="city-time" id="city-newyork">--:--</span>
+          </div>
+          <div class="world-chip" data-timezone="America/Los_Angeles">
+            <span class="city-name">舊金山 (SF)</span>
+            <span class="city-time" id="city-sf">--:--</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- 頁尾宣告 -->
+    <footer class="app-footer">
+      <p>&copy; 2026 個人時間儀表板 &bull; 每一刻都因專注而精彩</p>
+    </footer>
+  </div>
+
+  <!-- 修改姓名彈出對話框 (Modal) -->
+  <div class="modal-overlay" id="name-modal" aria-hidden="true">
+    <div class="modal-card glass-panel" role="dialog" aria-labelledby="modal-title">
+      <div class="modal-header">
+        <h2 id="modal-title" class="modal-title">設定您的專屬稱呼</h2>
+        <button id="close-modal-btn" class="close-btn" aria-label="關閉對話框">&times;</button>
+      </div>
+      <form id="name-form" class="modal-body">
+        <label for="name-input" class="input-label">請輸入您的名字或暱稱：</label>
+        <div class="input-wrapper">
+          <input type="text" id="name-input" class="modern-input" maxlength="20" placeholder="例如：王小明 / Alex" required autocomplete="off">
+        </div>
+        <div class="quick-suggests">
+          <span class="suggest-label">快速選擇：</span>
+          <button type="button" class="tag-btn" data-val="Alex">Alex</button>
+          <button type="button" class="tag-btn" data-val="小明">小明</button>
+          <button type="button" class="tag-btn" data-val="工程師">工程師</button>
+          <button type="button" class="tag-btn" data-val="親愛的探險家">探險家</button>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="cancel-name-btn" class="btn-secondary">取消</button>
+          <button type="submit" class="btn-primary">儲存名稱</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
