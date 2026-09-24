@@ -489,8 +489,8 @@ export default function Home() {
       setCounty(normalized);
       setQuery("");
       if (bounds && mapRef.current) {
-        mapRef.current.fitBounds(bounds, { padding: [26, 26], maxZoom: 9 });
-        if (mapRef.current.getZoom() < 9) mapRef.current.setZoom(9);
+        mapRef.current.fitBounds(bounds, { padding: [26, 26], maxZoom: 10 });
+        if (mapRef.current.getZoom() < 10) mapRef.current.setZoom(10);
       }
     };
 
@@ -614,8 +614,8 @@ export default function Home() {
 
       if (feature) {
         const layer = L.geoJSON(feature);
-        mapRef.current.fitBounds(layer.getBounds(), { padding: [26, 26], maxZoom: 9 });
-        if (mapRef.current.getZoom() < 9) mapRef.current.setZoom(9);
+        mapRef.current.fitBounds(layer.getBounds(), { padding: [26, 26], maxZoom: 10 });
+        if (mapRef.current.getZoom() < 10) mapRef.current.setZoom(10);
         return;
       }
     }
