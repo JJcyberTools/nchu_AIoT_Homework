@@ -489,7 +489,7 @@ export default function Home() {
       setCounty(normalized);
       setQuery("");
       if (bounds && mapRef.current) {
-        mapRef.current.fitBounds(bounds, { padding: [26, 26], maxZoom: 10 });
+        mapRef.current.fitBounds(bounds, { padding: [26, 26], maxZoom: 9 });
         if (mapRef.current.getZoom() < 9) mapRef.current.setZoom(9);
       }
     };
@@ -537,7 +537,7 @@ export default function Home() {
           },
         });
 
-        if (county === "全部縣市" && zoomLevel <= 8 && name) {
+        if (zoomLevel <= 9 && name) {
           const center = layer.getBounds().getCenter();
           L.marker(center, {
             icon: countyNameIcon(L, name, temp),
@@ -614,7 +614,7 @@ export default function Home() {
 
       if (feature) {
         const layer = L.geoJSON(feature);
-        mapRef.current.fitBounds(layer.getBounds(), { padding: [26, 26], maxZoom: 10 });
+        mapRef.current.fitBounds(layer.getBounds(), { padding: [26, 26], maxZoom: 9 });
         if (mapRef.current.getZoom() < 9) mapRef.current.setZoom(9);
         return;
       }
