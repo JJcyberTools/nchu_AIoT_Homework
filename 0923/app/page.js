@@ -419,7 +419,7 @@ export default function Home() {
     const group = markersRef.current;
     group.clearLayers();
 
-    if (zoomLevel < 9) return;
+    if (zoomLevel < 10) return;
 
     filteredStations.forEach((station) => {
       const marker = L.marker([station.lat, station.lon], {
@@ -556,7 +556,7 @@ export default function Home() {
 
     geoLayer.addTo(boundaryGroup);
 
-    if (county !== "全部縣市" && townGeoRef.current) {
+    if (county !== "全部縣市" && townGeoRef.current && zoomLevel >= 10) {
       const features = townGeoRef.current.features.filter((feature) =>
         countyNamesEqual(feature?.properties?.COUNTYNAME || "", county)
       );
