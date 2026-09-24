@@ -187,36 +187,63 @@ export async function GET() {
     if (inserted.length) {
       const snapshotId = inserted[0].id;
 
-      for (const station of result.stations) {
-        await sql.query(
-          `INSERT INTO observations (
-            snapshot_id, station_id, station_name, county, town,
-            observed_at, lng, lat, temperature, humidity, pressure,
-            wind_speed, wind_direction, precipitation, weather
-          ) VALUES (
-            $1, $2, $3, $4, $5,
-            $6, $7, $8, $9, $10, $11,
-            $12, $13, $14, $15
-          )`,
-          [
-            snapshotId,
-            station.stationId,
-            station.stationName,
-            station.county,
-            station.town,
-            station.observedAt,
-            station.lon,
-            station.lat,
-            station.temperature,
-            station.humidity,
-            station.pressure,
-            station.windSpeed,
-            station.windDirection,
-            station.precipitation,
-            station.weather,
-          ]
-        );
-      }
+      const observationRows = result.stations.map((station) => ({
+        station_id: station.stationId,
+        station_name: station.stationName,
+        county: station.county,
+        town: station.town,
+        observed_at: station.observedAt,
+        lng: station.lon,
+        lat: station.lat,
+        temperature: station.temperature,
+        humidity: station.humidity,
+        pressure: station.pressure,
+        wind_speed: station.windSpeed,
+        wind_direction: station.windDirection,
+        precipitation: station.precipitation,
+        weather: station.weather,
+      }));
+
+      await sql.query(
+        `INSERT INTO observations (
+          snapshot_id, station_id, station_name, county, town,
+          observed_at, lng, lat, temperature, humidity, pressure,
+          wind_speed, wind_direction, precipitation, weather
+        )
+        SELECT
+          $1::bigint,
+          x.station_id,
+          x.station_name,
+          x.county,
+          x.town,
+          x.observed_at::timestamptz,
+          x.lng,
+          x.lat,
+          x.temperature,
+          x.humidity,
+          x.pressure,
+          x.wind_speed,
+          x.wind_direction,
+          x.precipitation,
+          x.weather
+        FROM jsonb_to_recordset($2::jsonb) AS x(
+          station_id text,
+          station_name text,
+          county text,
+          town text,
+          observed_at text,
+          lng double precision,
+          lat double precision,
+          temperature double precision,
+          humidity double precision,
+          pressure double precision,
+          wind_speed double precision,
+          wind_direction double precision,
+          precipitation double precision,
+          weather text
+        )`,
+        [snapshotId, JSON.stringify(observationRows)]
+      );
 
       database = {
         stored: true,
