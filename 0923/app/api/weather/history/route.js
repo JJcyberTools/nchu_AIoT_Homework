@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db, ensureSchema } from "@/lib/db";
+import { db, ensureSchema } from "../../../../lib/db";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
