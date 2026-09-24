@@ -15,12 +15,11 @@ https://nchu-a-io-t-homework.vercel.app/
 **GitHub Repository：**  
 https://github.com/JJcyberTools/nchu_AIoT_Homework/tree/main/0923
 
-**舊版 GitHub Pages：**  
-https://jjcybertools.github.io/nchu_AIoT_Homework/0923/
 
-<img width="1903" height="966" alt="image" src="https://github.com/user-attachments/assets/4d26b5a1-5042-43d5-8472-aa3d6b650ae0" />
+<img width="2553" height="1335" alt="image" src="https://github.com/user-attachments/assets/87a62d7f-1c42-4e1e-9483-e15b256dd71d" />
 
-<img width="1901" height="975" alt="image" src="https://github.com/user-attachments/assets/8b702092-34b5-49a7-bd25-be8231afd177" />
+<img width="2536" height="1353" alt="image" src="https://github.com/user-attachments/assets/9625aad6-6fa7-4cd8-9eb1-b2e22821e049" />
+
 
 ---
 
