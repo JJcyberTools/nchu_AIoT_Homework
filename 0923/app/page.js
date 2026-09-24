@@ -66,6 +66,63 @@ function stationIcon(L, station) {
   });
 }
 
+function HistoryChart({ rows }) {
+  if (!rows.length) {
+    return <div className="history-empty">歷史資料正在累積中，之後重新載入就會逐步出現時間序列。</div>;
+  }
+
+  const values = rows
+    .map((row) => Number(row.temperature))
+    .filter((value) => Number.isFinite(value));
+
+  if (!values.length) {
+    return <div className="history-empty">目前沒有可用的歷史氣溫資料。</div>;
+  }
+
+  const width = 520;
+  const height = 180;
+  const padX = 34;
+  const padY = 18;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = Math.max(max - min, 1);
+
+  const points = rows.map((row, index) => {
+    const value = Number(row.temperature);
+    const x =
+      rows.length === 1
+        ? width / 2
+        : padX + (index / (rows.length - 1)) * (width - padX * 2);
+    const y =
+      height - padY - ((value - min) / range) * (height - padY * 2);
+    return { x, y, value, row };
+  });
+
+  const path = points
+    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`)
+    .join(" ");
+
+  return (
+    <div className="history-chart">
+      <svg viewBox={`0 0 ${width} ${height}`} role="img" aria-label="縣市歷史平均氣溫折線圖">
+        <line x1={padX} x2={width - padX} y1={height - padY} y2={height - padY} />
+        <line x1={padX} x2={padX} y1={padY} y2={height - padY} />
+        <path d={path} className="history-line" />
+        {points.map((point, index) => (
+          <g key={`${point.row.fetchedAt}-${index}`}>
+            <circle cx={point.x} cy={point.y} r="3.5" />
+            <title>
+              {`${formatTime(point.row.observedAt || point.row.fetchedAt)} · ${point.value.toFixed(1)}°C`}
+            </title>
+          </g>
+        ))}
+        <text x="4" y={padY + 3}>{max.toFixed(1)}°</text>
+        <text x="4" y={height - padY}>{min.toFixed(1)}°</text>
+      </svg>
+    </div>
+  );
+}
+
 function loadLeaflet() {
   return new Promise((resolve, reject) => {
     if (window.L) {
@@ -101,6 +158,9 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [mapReady, setMapReady] = useState(false);
   const [error, setError] = useState("");
+  const [historyRows, setHistoryRows] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState("");
 
   const loadWeather = useCallback(async () => {
     setLoading(true);
@@ -122,6 +182,42 @@ export default function Home() {
   useEffect(() => {
     loadWeather();
   }, [loadWeather]);
+
+  useEffect(() => {
+    if (county === "全部縣市") {
+      setHistoryRows([]);
+      setHistoryError("");
+      return;
+    }
+
+    let cancelled = false;
+    setHistoryLoading(true);
+    setHistoryError("");
+
+    fetch(`/api/weather/history?county=${encodeURIComponent(county)}&limit=96`, {
+      cache: "no-store",
+    })
+      .then(async (response) => {
+        const json = await response.json();
+        if (!response.ok || !json.success) {
+          throw new Error(json.error || "歷史資料載入失敗");
+        }
+        if (!cancelled) setHistoryRows(json.rows || []);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setHistoryRows([]);
+          setHistoryError(err instanceof Error ? err.message : "歷史資料載入失敗");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setHistoryLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [county, data?.fetchedAt]);
 
   useEffect(() => {
     let cancelled = false;
@@ -169,9 +265,22 @@ export default function Home() {
 
   const counties = useMemo(() => {
     if (!data?.stations) return [];
+
+    const order = [
+      "基隆市", "臺北市", "新北市", "桃園市", "新竹市", "新竹縣",
+      "苗栗縣", "臺中市", "彰化縣", "南投縣", "雲林縣",
+      "嘉義市", "嘉義縣", "臺南市", "高雄市", "屏東縣",
+      "宜蘭縣", "花蓮縣", "臺東縣", "澎湖縣", "金門縣", "連江縣"
+    ];
+    const orderIndex = new Map(order.map((name, index) => [name, index]));
+
     return [...new Set(data.stations.map((s) => s.county))]
       .filter(Boolean)
-      .sort((a, b) => a.localeCompare(b, "zh-Hant"));
+      .sort((a, b) => {
+        const ai = orderIndex.has(a) ? orderIndex.get(a) : 999;
+        const bi = orderIndex.has(b) ? orderIndex.get(b) : 999;
+        return ai === bi ? a.localeCompare(b, "zh-Hant") : ai - bi;
+      });
   }, [data]);
 
   const filteredStations = useMemo(() => {
@@ -333,6 +442,47 @@ export default function Home() {
           <p className="notice">主要資料源暫時不可用，目前使用備援資料集。</p>
         )}
       </aside>
+
+      {county !== "全部縣市" && (
+        <aside className="history-panel glass">
+          <div className="history-head">
+            <div>
+              <b>{county} 歷史平均氣溫</b>
+              <small>
+                Neon PostgreSQL · {historyRows.length} 筆快照
+              </small>
+            </div>
+            {historyLoading && <span>查詢中…</span>}
+          </div>
+
+          {historyError ? (
+            <div className="history-empty">{historyError}</div>
+          ) : (
+            <HistoryChart rows={historyRows} />
+          )}
+
+          <div className="history-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>時間</th>
+                  <th>平均氣溫</th>
+                  <th>測站數</th>
+                </tr>
+              </thead>
+              <tbody>
+                {historyRows.slice().reverse().slice(0, 8).map((row) => (
+                  <tr key={row.fetchedAt}>
+                    <td>{formatTime(row.observedAt || row.fetchedAt)}</td>
+                    <td>{Number(row.temperature).toFixed(1)}°C</td>
+                    <td>{row.stationCount}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </aside>
+      )}
 
       <aside className="legend glass">
         <b>氣溫圖例</b>
