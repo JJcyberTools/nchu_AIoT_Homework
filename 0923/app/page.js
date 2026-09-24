@@ -8,6 +8,22 @@ const TAIWAN_BOUNDS = [
   [26.6, 123.1],
 ];
 
+function canonicalCountyName(name = "") {
+  const value = String(name).trim().replace(/台/g, "臺");
+  const aliases = {
+    "桃園縣": "桃園市",
+    "臺北縣": "新北市",
+    "臺中縣": "臺中市",
+    "臺南縣": "臺南市",
+    "高雄縣": "高雄市",
+  };
+  return aliases[value] || value;
+}
+
+function countyNamesEqual(a, b) {
+  return canonicalCountyName(a) === canonicalCountyName(b);
+}
+
 function weatherEmoji(text = "") {
   if (/雷/.test(text)) return "⛈️";
   if (/雨/.test(text)) return "🌧️";
@@ -123,6 +139,49 @@ function HistoryChart({ rows }) {
   );
 }
 
+function loadTopoJson() {
+  return new Promise((resolve, reject) => {
+    if (window.topojson) {
+      resolve(window.topojson);
+      return;
+    }
+    const existing = document.querySelector('script[data-topojson="true"]');
+    if (existing) {
+      existing.addEventListener("load", () => resolve(window.topojson));
+      existing.addEventListener("error", reject);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://unpkg.com/topojson-client@3.1.0/dist/topojson-client.min.js";
+    script.dataset.topojson = "true";
+    script.onload = () => resolve(window.topojson);
+    script.onerror = reject;
+    document.body.appendChild(script);
+  });
+}
+
+function countyNameIcon(L, name, temp) {
+  const color = temp == null ? "#cbd5e1" : colorByTemperature(temp);
+  const tempText = temp == null ? "" : `${temp.toFixed(1)}°`;
+  return L.divIcon({
+    className: "county-map-name-wrap",
+    html: `<div class="county-map-name" style="--county-color:${color}">
+      <span>${name}</span><small>${tempText}</small>
+    </div>`,
+    iconSize: [96, 34],
+    iconAnchor: [48, 17],
+  });
+}
+
+function districtNameIcon(L, county, town) {
+  return L.divIcon({
+    className: "district-map-name-wrap",
+    html: `<div class="district-map-name"><span>${town}</span><small>${county}</small></div>`,
+    iconSize: [86, 36],
+    iconAnchor: [43, 18],
+  });
+}
+
 function loadLeaflet() {
   return new Promise((resolve, reject) => {
     if (window.L) {
@@ -150,6 +209,12 @@ export default function Home() {
   const mapNodeRef = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef(null);
+  const countyBoundaryRef = useRef(null);
+  const countyNameRef = useRef(null);
+  const districtBoundaryRef = useRef(null);
+  const districtNameRef = useRef(null);
+  const countyGeoRef = useRef(null);
+  const townGeoRef = useRef(null);
   const leafletRef = useRef(null);
 
   const [data, setData] = useState(null);
@@ -157,6 +222,8 @@ export default function Home() {
   const [county, setCounty] = useState("全部縣市");
   const [loading, setLoading] = useState(true);
   const [mapReady, setMapReady] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(7);
+  const [boundaryVersion, setBoundaryVersion] = useState(0);
   const [error, setError] = useState("");
   const [historyRows, setHistoryRows] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -247,7 +314,15 @@ export default function Home() {
 
         L.control.zoom({ position: "bottomright" }).addTo(map);
         markersRef.current = L.layerGroup().addTo(map);
+        countyBoundaryRef.current = L.layerGroup().addTo(map);
+        countyNameRef.current = L.layerGroup().addTo(map);
+        districtBoundaryRef.current = L.layerGroup().addTo(map);
+        districtNameRef.current = L.layerGroup().addTo(map);
         mapRef.current = map;
+
+        const syncZoom = () => setZoomLevel(map.getZoom());
+        map.on("zoomend", syncZoom);
+        syncZoom();
         setMapReady(true);
       })
       .catch(() => {
@@ -262,6 +337,45 @@ export default function Home() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!mapReady) return;
+    let cancelled = false;
+
+    Promise.all([
+      fetch("https://raw.githubusercontent.com/JJcyberTools/nchu_AIoT_Homework/main/0923/taiwan-counties.geojson", {
+        cache: "force-cache",
+      }).then((response) => {
+        if (!response.ok) throw new Error("縣市邊界載入失敗");
+        return response.json();
+      }),
+      Promise.all([
+        fetch("https://cdn.jsdelivr.net/npm/taiwan-atlas/towns-10t.json", {
+          cache: "force-cache",
+        }).then((response) => {
+          if (!response.ok) throw new Error("鄉鎮邊界載入失敗");
+          return response.json();
+        }),
+        loadTopoJson(),
+      ]).then(([topology, topojson]) => {
+        if (!topology?.objects?.towns) return null;
+        return topojson.feature(topology, topology.objects.towns);
+      }),
+    ])
+      .then(([countyGeo, townGeo]) => {
+        if (cancelled) return;
+        countyGeoRef.current = countyGeo;
+        townGeoRef.current = townGeo;
+        setBoundaryVersion((value) => value + 1);
+      })
+      .catch((err) => {
+        console.warn(err);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mapReady]);
 
   const counties = useMemo(() => {
     if (!data?.stations) return [];
@@ -288,7 +402,7 @@ export default function Home() {
     const keyword = query.trim().toLowerCase();
     return data.stations.filter((station) => {
       const countyMatched =
-        county === "全部縣市" || station.county === county;
+        county === "全部縣市" || countyNamesEqual(station.county, county);
       const keywordMatched =
         !keyword ||
         `${station.stationName} ${station.county} ${station.town}`
@@ -305,6 +419,8 @@ export default function Home() {
     const group = markersRef.current;
     group.clearLayers();
 
+    if (zoomLevel < 9) return;
+
     filteredStations.forEach((station) => {
       const marker = L.marker([station.lat, station.lon], {
         icon: stationIcon(L, station),
@@ -318,46 +434,203 @@ export default function Home() {
             <span>${weatherEmoji(station.weather)}</span>
             <strong>${escapeHtml(station.stationName)}</strong>
           </div>
-          <div class="popup-place">${escapeHtml(station.county)} ${escapeHtml(
-        station.town
-      )}</div>
-          <div class="popup-temp" style="color:${colorByTemperature(
-            station.temperature
-          )}">
+          <div class="popup-place">${escapeHtml(station.county)} ${escapeHtml(station.town)}</div>
+          <div class="popup-temp" style="color:${colorByTemperature(station.temperature)}">
             ${station.temperature.toFixed(1)}°C
           </div>
           <div class="popup-grid">
             <span>天氣</span><b>${escapeHtml(station.weather || "—")}</b>
-            <span>濕度</span><b>${formatValue(
-              station.humidity == null ? null : station.humidity * 100,
-              "%",
-              0
-            )}</b>
-            <span>雨量</span><b>${formatValue(
-              station.precipitation,
-              " mm"
-            )}</b>
+            <span>濕度</span><b>${formatValue(station.humidity, "%", 0)}</b>
+            <span>雨量</span><b>${formatValue(station.precipitation, " mm")}</b>
             <span>風速</span><b>${formatValue(station.windSpeed, " m/s")}</b>
-            <span>氣壓</span><b>${formatValue(
-              station.pressure,
-              " hPa"
-            )}</b>
+            <span>氣壓</span><b>${formatValue(station.pressure, " hPa")}</b>
             <span>觀測</span><b>${formatTime(station.observedAt)}</b>
           </div>
         </div>
       `);
       marker.addTo(group);
     });
+  }, [filteredStations, mapReady, zoomLevel]);
 
-    if (filteredStations.length > 0 && (county !== "全部縣市" || query.trim())) {
-      const bounds = L.latLngBounds(
-        filteredStations.map((s) => [s.lat, s.lon])
+  useEffect(() => {
+    if (!mapReady || !leafletRef.current || !countyBoundaryRef.current) return;
+    const L = leafletRef.current;
+    const countyGeo = countyGeoRef.current;
+    if (!countyGeo) return;
+
+    const boundaryGroup = countyBoundaryRef.current;
+    const nameGroup = countyNameRef.current;
+    const districtGroup = districtBoundaryRef.current;
+    const districtNameGroup = districtNameRef.current;
+
+    boundaryGroup.clearLayers();
+    nameGroup.clearLayers();
+    districtGroup.clearLayers();
+    districtNameGroup.clearLayers();
+
+    const stationTemps = new Map();
+    (data?.stations || []).forEach((station) => {
+      const key = canonicalCountyName(station.county);
+      const values = stationTemps.get(key) || [];
+      if (typeof station.temperature === "number") values.push(station.temperature);
+      stationTemps.set(key, values);
+    });
+
+    const avgTemp = (name) => {
+      const values = stationTemps.get(canonicalCountyName(name)) || [];
+      return values.length
+        ? values.reduce((sum, value) => sum + value, 0) / values.length
+        : null;
+    };
+
+    let geoLayer;
+    const chooseCounty = (name, bounds) => {
+      const normalized = canonicalCountyName(name);
+      setCounty(normalized);
+      setQuery("");
+      if (bounds && mapRef.current) {
+        mapRef.current.fitBounds(bounds, { padding: [26, 26], maxZoom: 10 });
+        if (mapRef.current.getZoom() < 9) mapRef.current.setZoom(9);
+      }
+    };
+
+    geoLayer = L.geoJSON(countyGeo, {
+      style: (feature) => {
+        const name = canonicalCountyName(feature?.properties?.COUNTYNAME || feature?.properties?.name || "");
+        const temp = avgTemp(name);
+        const color = temp == null ? "#94a3b8" : colorByTemperature(temp);
+        const active = county !== "全部縣市" && countyNamesEqual(name, county);
+        return {
+          color: active ? color : "#64748b",
+          weight: active ? 3.2 : 1.25,
+          opacity: active ? 1 : 0.72,
+          fillColor: color,
+          fillOpacity: active ? 0.10 : 0.018,
+        };
+      },
+      onEachFeature: (feature, layer) => {
+        const name = canonicalCountyName(feature?.properties?.COUNTYNAME || feature?.properties?.name || "");
+        const temp = avgTemp(name);
+        const color = temp == null ? "#94a3b8" : colorByTemperature(temp);
+        const active = county !== "全部縣市" && countyNamesEqual(name, county);
+
+        layer.bindTooltip(
+          temp == null
+            ? `${name} · 點擊切換`
+            : `${name} · 平均 ${temp.toFixed(1)}°C · 點擊切換`,
+          { sticky: true }
+        );
+
+        layer.on({
+          mouseover: (event) => {
+            event.target.setStyle({
+              weight: 3.6,
+              opacity: 1,
+              fillOpacity: active ? 0.15 : 0.10,
+              color,
+            });
+          },
+          mouseout: (event) => geoLayer.resetStyle(event.target),
+          click: (event) => {
+            L.DomEvent.stopPropagation(event);
+            chooseCounty(name, event.target.getBounds());
+          },
+        });
+
+        if (county === "全部縣市" && zoomLevel <= 8 && name) {
+          const center = layer.getBounds().getCenter();
+          L.marker(center, {
+            icon: countyNameIcon(L, name, temp),
+            interactive: true,
+            keyboard: true,
+            title: name,
+          })
+            .on("click", (event) => {
+              L.DomEvent.stopPropagation(event);
+              chooseCounty(name, layer.getBounds());
+            })
+            .addTo(nameGroup);
+        }
+      },
+    });
+
+    geoLayer.addTo(boundaryGroup);
+
+    if (county !== "全部縣市" && townGeoRef.current) {
+      const features = townGeoRef.current.features.filter((feature) =>
+        countyNamesEqual(feature?.properties?.COUNTYNAME || "", county)
       );
-      mapRef.current.fitBounds(bounds.pad(0.2), { maxZoom: 10 });
-    } else {
-      mapRef.current.fitBounds(TAIWAN_BOUNDS);
+
+      let townLayer;
+      townLayer = L.geoJSON(
+        { type: "FeatureCollection", features },
+        {
+          style: {
+            color: "#cbd5e1",
+            weight: 1.15,
+            opacity: 0.78,
+            fillColor: "#94a3b8",
+            fillOpacity: 0.025,
+          },
+          onEachFeature: (feature, layer) => {
+            const countyName = canonicalCountyName(feature?.properties?.COUNTYNAME || county);
+            const town = feature?.properties?.TOWNNAME || "";
+            layer.bindTooltip(`${countyName} ${town}`, { sticky: true });
+            layer.on({
+              mouseover: (event) =>
+                event.target.setStyle({
+                  weight: 2.2,
+                  color: "#f8fafc",
+                  fillOpacity: 0.12,
+                }),
+              mouseout: (event) => townLayer.resetStyle(event.target),
+            });
+
+            if (town) {
+              L.marker(layer.getBounds().getCenter(), {
+                icon: districtNameIcon(L, countyName, town),
+                interactive: false,
+                keyboard: false,
+              }).addTo(districtNameGroup);
+            }
+          },
+        }
+      );
+      townLayer.addTo(districtGroup);
     }
-  }, [filteredStations, mapReady, county, query]);
+  }, [mapReady, data, county, zoomLevel, boundaryVersion]);
+
+  useEffect(() => {
+    if (!mapReady || !mapRef.current || !leafletRef.current) return;
+    const L = leafletRef.current;
+
+    if (county !== "全部縣市") {
+      const feature = countyGeoRef.current?.features?.find((item) =>
+        countyNamesEqual(
+          item?.properties?.COUNTYNAME || item?.properties?.name || "",
+          county
+        )
+      );
+
+      if (feature) {
+        const layer = L.geoJSON(feature);
+        mapRef.current.fitBounds(layer.getBounds(), { padding: [26, 26], maxZoom: 10 });
+        if (mapRef.current.getZoom() < 9) mapRef.current.setZoom(9);
+        return;
+      }
+    }
+
+    if (query.trim() && filteredStations.length) {
+      const bounds = L.latLngBounds(filteredStations.map((station) => [station.lat, station.lon]));
+      mapRef.current.fitBounds(bounds.pad(0.2), { maxZoom: 10 });
+      if (mapRef.current.getZoom() < 9) mapRef.current.setZoom(9);
+      return;
+    }
+
+    if (county === "全部縣市" && !query.trim()) {
+      mapRef.current.setView(TAIWAN_CENTER, 7);
+    }
+  }, [county, query, mapReady, boundaryVersion]);
 
   const visibleTemps = filteredStations.map((s) => s.temperature);
   const minTemp = visibleTemps.length ? Math.min(...visibleTemps) : null;
