@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
+import { db, ensureSchema } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 const CWA_BASE = "https://opendata.cwa.gov.tw/api/v1/rest/datastore";
 
-const CWA_API_KEY =
-  process.env.CWA_API_KEY ||
-  "CWA-55FDA6D3-A43C-4AE0-BB30-E62D5F684FB2";
+const CWA_API_KEY = process.env.CWA_API_KEY;
 
 const PRIMARY = "O-A0003-001";
 const FALLBACK = process.env.CWA_FALLBACK_DATASET || "O-A0001-001";
@@ -122,6 +121,12 @@ function summarize(stations) {
 export async function GET() {
   const apiKey = CWA_API_KEY;
 
+  if (!apiKey) {
+    return NextResponse.json(
+      { success: false, error: "CWA_API_KEY 尚未設定" },
+      { status: 500 }
+    );
+  }
 
   let result;
   let primaryError = null;
@@ -150,20 +155,103 @@ export async function GET() {
     .sort()
     .at(-1);
 
+  const fetchedAt = new Date().toISOString();
+  let database = { stored: false };
+
+  try {
+    await ensureSchema();
+    const sql = db();
+
+    const payload = {
+      dataset: result.dataset,
+      fetchedAt,
+      latestObservedAt,
+      stations: result.stations,
+    };
+
+    const inserted = await sql.query(
+      `INSERT INTO snapshots
+       (fetched_at, updated_at, source, station_count, payload)
+       VALUES ($1, $2, $3, $4, $5::jsonb)
+       ON CONFLICT (source, updated_at) DO NOTHING
+       RETURNING id`,
+      [
+        fetchedAt,
+        latestObservedAt || fetchedAt,
+        `CWA ${result.dataset}`,
+        result.stations.length,
+        JSON.stringify(payload),
+      ]
+    );
+
+    if (inserted.length) {
+      const snapshotId = inserted[0].id;
+
+      for (const station of result.stations) {
+        await sql.query(
+          `INSERT INTO observations (
+            snapshot_id, station_id, station_name, county, town,
+            observed_at, lng, lat, temperature, humidity, pressure,
+            wind_speed, wind_direction, precipitation, weather
+          ) VALUES (
+            $1, $2, $3, $4, $5,
+            $6, $7, $8, $9, $10, $11,
+            $12, $13, $14, $15
+          )`,
+          [
+            snapshotId,
+            station.stationId,
+            station.stationName,
+            station.county,
+            station.town,
+            station.observedAt,
+            station.lon,
+            station.lat,
+            station.temperature,
+            station.humidity,
+            station.pressure,
+            station.windSpeed,
+            station.windDirection,
+            station.precipitation,
+            station.weather,
+          ]
+        );
+      }
+
+      database = {
+        stored: true,
+        snapshotId: Number(snapshotId),
+        observationCount: result.stations.length,
+      };
+    } else {
+      database = {
+        stored: false,
+        reason: "duplicate-observation-time",
+      };
+    }
+  } catch (error) {
+    console.error("[weather] Neon save failed:", error);
+    database = {
+      stored: false,
+      error: error instanceof Error ? error.message : "database error",
+    };
+  }
+
   return NextResponse.json(
     {
       success: true,
       source: "中央氣象署 CWA OpenData",
       dataset: result.dataset,
       fallbackUsed: result.dataset !== PRIMARY,
-      fetchedAt: new Date().toISOString(),
+      fetchedAt,
       latestObservedAt,
       summary: summarize(result.stations),
       stations: result.stations,
+      database,
     },
     {
       headers: {
-        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        "Cache-Control": "no-store",
       },
     }
   );
