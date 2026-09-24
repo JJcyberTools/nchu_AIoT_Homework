@@ -23,328 +23,266 @@ https://github.com/JJcyberTools/nchu_AIoT_Homework/tree/main/0923
 
 ---
 
-## 專案目前架構
+# 技術實作重點
 
-```text
-GitHub
-  │
-  ├── Next.js / React Source Code
-  └── GitHub Actions
-          │
-          │ 每 30 分鐘
-          ▼
-       Vercel
-          │
-          ├── /api/weather
-          │       │
-          │       ▼
-          │   CWA Open Data API
-          │       │
-          │       ▼
-          │   Neon PostgreSQL
-          │       ├── snapshots
-          │       └── observations
-          │
-          └── /api/weather/history
-                  │
-                  ▼
-             歷史氣象資料
-                  │
-                  ▼
-          React / Leaflet / Chart UI
-```
+本專案目前的重點不是單純做出氣象介面，而是把課堂中會使用到的 **API、JSON、GIS、SQL、資料庫、雲端部署與自動化資料蒐集** 串成一個完整流程。
 
-目前 GitHub 是原始碼來源，Vercel 會偵測 `main` branch 的新 commit 並自動重新部署。
+## 技術總覽
+
+| 類別 | 使用技術 / 工具 | 本專案用途 | 狀態 |
+| --- | --- | --- | --- |
+| 氣象資料 | CWA Open Data API | 取得中央氣象署自動氣象站觀測資料 | ✅ |
+| API 資料格式 | JSON | 解析 CWA 回傳資料 | ✅ |
+| Web Framework | Next.js 14 | 前端頁面與 Server API Route | ✅ |
+| Frontend | React | Dashboard UI 與互動狀態 | ✅ |
+| Server API | Next.js Route Handler | 由 Vercel Server 端呼叫 CWA / DB | ✅ |
+| GIS | Leaflet | 台灣互動式地圖 | ✅ |
+| GIS Data | GeoJSON | 台灣縣市行政邊界 | ✅ |
+| GIS Data | TopoJSON | 鄉鎮市區行政邊界 | ✅ |
+| GIS Conversion | topojson-client | TopoJSON 轉 GeoJSON | ✅ |
+| Map Tiles | Esri World Dark Gray | GIS 底圖 | ✅ |
+| Database | Neon PostgreSQL | 永久保存歷史氣象資料 | ✅ |
+| SQL | PostgreSQL SQL Query | 建表、INSERT、JOIN、AVG、歷史查詢 | ✅ |
+| DB Driver | @neondatabase/serverless | Next.js / Vercel 連線 Neon | ✅ |
+| Cloud Deployment | Vercel | Next.js 部署與 Server Function | ✅ |
+| Secret Management | Vercel Environment Variables | 保存 CWA_API_KEY、DATABASE_URL | ✅ |
+| Version Control | Git / GitHub | 原始碼與 Commit 管理 | ✅ |
+| Automation | GitHub Actions | 每 30 分鐘自動取得氣象資料 | ✅ |
+| Historical Data | PostgreSQL Time Series | 累積不同時間的測站觀測 | ✅ |
 
 ---
 
-## 主要功能
+## 課堂技術對照
 
-- CWA `O-A0003-001` 自動氣象站即時觀測資料
-- Next.js API Route 代理 CWA API
-- CWA API Key 儲存在 Vercel Environment Variables
-- Neon PostgreSQL 永久儲存歷史資料
-- GitHub Actions 每 30 分鐘自動觸發資料擷取
-- Leaflet 台灣 GIS 地圖
-- 台灣縣市行政邊界
-- 鄉鎮市區行政邊界
-- 縣市名稱與平均氣溫
-- 縣市 Polygon Hover 高亮
-- 點擊縣市直接切換並放大
-- 縣市下拉選單
-- 測站 / 行政區文字搜尋
-- 即時測站氣溫 Marker
-- 天氣圖示
-- 測站 Popup 詳細資料
-- 縣市歷史平均氣溫折線圖
-- 歷史資料表格
-- RWD 桌面 / 行動版介面
+以下整理本專案和課堂練習技術的對應，方便快速確認實作範圍。
 
----
-
-## GIS 顯示邏輯
-
-為避免全台同時顯示大量測站造成畫面過度擁擠，目前依 Leaflet Zoom Level 控制資訊密度。
-
-### Zoom 7–9
-
-主要顯示：
-
-- 縣市邊界
-- 縣市名稱
-- 縣市平均氣溫
-- 縣市 Hover
-- 縣市 Click
-
-此階段不顯示大量測站與鄉鎮細節。
-
-### 點擊縣市
-
-點擊地圖上的縣市 Polygon 或縣市名稱後：
-
-```text
-選擇縣市
-   ↓
-自動切換下拉選單
-   ↓
-地圖直接放大到 Zoom 10
-   ↓
-顯示該縣市詳細資訊
-```
-
-### Zoom 10 以上
-
-顯示詳細層級：
-
-- 該縣市氣象站 Marker
-- 鄉鎮市區行政邊界
-- 鄉鎮市區名稱
-- 測站即時氣溫
-- 測站詳細 Popup
-
-這樣可以讓全台視角保持乾淨，同時在需要時查看細部資料。
+| 課堂主題 | 本專案實作方式 | 對應檔案 |
+| --- | --- | --- |
+| CWA Open Data | 使用 `O-A0003-001` | `app/api/weather/route.js` |
+| HTTP Request | Server 端使用 `fetch()` 呼叫 CWA | `app/api/weather/route.js` |
+| JSON Parsing | 解析 Station / WeatherElement / GeoInfo | `app/api/weather/route.js` |
+| 資料清洗 | 過濾無效值、座標、氣溫與缺值 | `app/api/weather/route.js` |
+| SQL Database | Neon PostgreSQL | `lib/db.js` |
+| 建立 Schema | `CREATE TABLE IF NOT EXISTS` | `lib/db.js` |
+| SQL INSERT | 儲存 snapshots / observations | `app/api/weather/route.js` |
+| SQL Query | 歷史資料查詢、JOIN、AVG | `app/api/weather/history/route.js` |
+| Historical Data | 每次新的觀測時間存入 PostgreSQL | Neon DB |
+| GIS Map | Leaflet | `app/page.js` |
+| County Boundary | GeoJSON | `taiwan-counties.geojson` |
+| Town Boundary | Taiwan Atlas TopoJSON | `app/page.js` |
+| Dashboard | React + Next.js | `app/page.js` |
+| Cloud Deployment | Vercel | Vercel Project |
+| Scheduled Collection | GitHub Actions Cron | `.github/workflows/weather-cron.yml` |
 
 ---
 
-## CWA Open Data
-
-主要使用資料集：
+## 系統架構
 
 ```text
-O-A0003-001
+                    GitHub
+                      │
+          Source Code│
+                      ▼
+                   Vercel
+                      │
+            Next.js Server API
+                      │
+             ┌────────┴────────┐
+             │                 │
+             ▼                 ▼
+       CWA Open Data      Neon PostgreSQL
+       O-A0003-001        snapshots
+             │            observations
+             │                 │
+             └────────┬────────┘
+                      ▼
+               Historical API
+                      │
+                      ▼
+          React + Leaflet Dashboard
 ```
 
-若主要資料源失敗，也保留備援資料集邏輯：
+另一條背景資料蒐集流程：
 
 ```text
-O-A0001-001
+GitHub Actions
+每 30 分鐘
+      │
+      ▼
+Vercel /api/weather
+      │
+      ▼
+CWA Open Data
+      │
+      ▼
+Neon PostgreSQL
 ```
-
-主要使用欄位：
-
-| 欄位 | 用途 |
-| --- | --- |
-| StationId | 測站 ID |
-| StationName | 測站名稱 |
-| GeoInfo.CountyName | 縣市 |
-| GeoInfo.TownName | 鄉鎮市區 |
-| Coordinates | 經緯度 |
-| AirTemperature | 氣溫 |
-| RelativeHumidity | 相對濕度 |
-| AirPressure | 氣壓 |
-| WindSpeed | 風速 |
-| WindDirection | 風向 |
-| Precipitation | 雨量 |
-| Weather | 天氣現象 |
-| ObsTime | 觀測時間 |
 
 ---
 
-## API Key 管理
+## Vercel
 
-CWA API Key 不再直接寫在前端 JavaScript。
+Vercel 在本專案負責：
 
-目前改為放在 Vercel Environment Variables：
+- 部署 Next.js
+- 執行 Server API Route
+- 從 GitHub `main` branch 自動部署
+- 提供 Environment Variables
+- 讓前端不需要直接保存資料庫連線資訊
+
+目前 Server 端使用的環境變數：
 
 ```text
 CWA_API_KEY
+DATABASE_URL
 ```
 
-Next.js Server API 使用：
-
-```js
-process.env.CWA_API_KEY
-```
-
-因此瀏覽器不需要直接取得 CWA API Key。
+API Key 與資料庫 Connection String 都不直接寫入前端程式。
 
 ---
 
 ## Neon PostgreSQL
 
-目前資料庫使用 **Neon Serverless PostgreSQL**，並透過：
+資料庫採用 **Neon Serverless PostgreSQL**。
 
-```text
-DATABASE_URL
-```
-
-由 Vercel Server Function 連線。
-
-使用套件：
+連線套件：
 
 ```text
 @neondatabase/serverless
 ```
 
+主要使用兩張資料表。
+
 ### snapshots
 
-每一次成功取得新的 CWA 觀測資料時，建立一筆 Snapshot。
+代表每一次成功取得的新氣象快照。
 
-主要欄位：
-
-```text
-id
-fetched_at
-updated_at
-source
-station_count
-payload
+```sql
+snapshots
+- id
+- fetched_at
+- updated_at
+- source
+- station_count
+- payload
 ```
-
-並使用：
-
-```text
-UNIQUE (source, updated_at)
-```
-
-避免同一個 CWA 觀測時間重複寫入。
 
 ### observations
 
-每一個 Snapshot 會包含該次所有有效測站資料。
+保存該次快照中的每一個測站資料。
 
-主要欄位：
-
-```text
-snapshot_id
-station_id
-station_name
-county
-town
-observed_at
-lng
-lat
-temperature
-humidity
-pressure
-wind_speed
-wind_direction
-precipitation
-weather
+```sql
+observations
+- snapshot_id
+- station_id
+- station_name
+- county
+- town
+- observed_at
+- lng
+- lat
+- temperature
+- humidity
+- pressure
+- wind_speed
+- wind_direction
+- precipitation
+- weather
 ```
 
-因此資料會隨時間累積，形成真正的氣象時序資料。
+使用到的 SQL 概念包括：
+
+```text
+CREATE TABLE
+CREATE INDEX
+INSERT
+ON CONFLICT
+SELECT
+JOIN
+WHERE
+GROUP BY
+ORDER BY
+AVG
+MAX
+COUNT
+LIMIT
+```
+
+因此目前已經不是只把資料暫存在 Browser Memory，而是有真正的 **SQL Database + Historical Data**。
 
 ---
 
-## 即時氣象 API
+## API
 
-API Route：
+### Current Weather API
 
 ```text
 GET /api/weather
 ```
 
-流程：
+負責：
 
 ```text
-Browser / GitHub Actions
-        ↓
-GET /api/weather
-        ↓
-Vercel Server Function
-        ↓
-CWA O-A0003-001
-        ↓
-JSON Parsing / Data Cleaning
-        ↓
-Neon PostgreSQL
-        ↓
-Response to Frontend
+CWA API
+   ↓
+JSON
+   ↓
+資料清洗
+   ↓
+Neon PostgreSQL INSERT
+   ↓
+Frontend
 ```
 
-如果 CWA 回傳的是已經儲存過的觀測時間，資料庫不會再次建立重複 Snapshot。
+### Historical Weather API
+
+```text
+GET /api/weather/history
+```
+
+縣市歷史資料：
+
+```text
+/api/weather/history?county=臺中市&limit=96
+```
+
+單一測站歷史資料：
+
+```text
+/api/weather/history?stationId=467490&limit=144
+```
+
+歷史查詢由 PostgreSQL 執行，而不是在前端用假資料產生。
 
 ---
 
-## 歷史氣象 API
+## GIS 技術
 
-### 查詢縣市歷史平均氣溫
-
-例如：
+GIS 使用：
 
 ```text
-GET /api/weather/history?county=臺中市&limit=96
+Leaflet
+GeoJSON
+TopoJSON
+topojson-client
+Esri Map Tiles
 ```
 
-回傳每個 Snapshot 中該縣市所有測站的平均氣溫。
+資料來源：
 
-### 查詢單一測站歷史資料
+| GIS 資料 | 使用方式 |
+| --- | --- |
+| `taiwan-counties.geojson` | 縣市邊界 |
+| Taiwan Atlas `towns-10t.json` | 鄉鎮市區邊界 |
+| CWA Station Coordinates | 測站經緯度 |
 
-例如：
-
-```text
-GET /api/weather/history?stationId=467490&limit=144
-```
-
-可取得單一測站的：
-
-- 氣溫
-- 濕度
-- 氣壓
-- 風速
-- 風向
-- 雨量
-- 觀測時間
-
-這部分可繼續延伸成單站歷史圖表。
+因此地圖是由真實座標與行政區 GIS Data 疊加產生。
 
 ---
 
-## 歷史資料折線圖
+## 自動資料蒐集
 
-選擇縣市後，前端會呼叫：
-
-```text
-/api/weather/history?county=...
-```
-
-折線圖目前代表：
-
-```text
-時間
- ↓
-該縣市所有測站平均氣溫
-```
-
-例如：
-
-```text
-20:00 → 26.8°C
-20:30 → 26.4°C
-21:00 → 26.1°C
-21:30 → 25.8°C
-```
-
-這與舊版「同一時間比較不同測站」不同，目前已經是真正由 PostgreSQL 歷史資料產生的時間序列。
-
----
-
-## 每 30 分鐘自動收集資料
-
-由於 Vercel Hobby Plan 不適合使用高頻率 Vercel Cron，目前改用 **GitHub Actions** 定時呼叫 Vercel API。
-
-Workflow：
+使用 GitHub Actions：
 
 ```text
 .github/workflows/weather-cron.yml
@@ -353,219 +291,16 @@ Workflow：
 排程：
 
 ```yaml
-schedule:
-  - cron: "*/30 * * * *"
+cron: "*/30 * * * *"
 ```
 
-流程：
+也就是每 30 分鐘自動呼叫一次 Vercel Weather API。
 
-```text
-GitHub Actions
-每 30 分鐘
-     ↓
-Vercel /api/weather
-     ↓
-CWA
-     ↓
-Neon PostgreSQL
-```
-
-因此即使沒有使用者開啟網站，歷史氣象資料仍會持續累積。
+目的不是單純刷新網頁，而是讓 PostgreSQL 持續累積不同時間的觀測資料。
 
 ---
 
-## 資料清洗
-
-CWA API 回傳資料後，Server 端會進行基本清洗，包括：
-
-- 過濾無 Station ID 的資料
-- 過濾無經緯度資料
-- 過濾無有效氣溫資料
-- Taiwan 經緯度範圍檢查
-- 不合理氣溫範圍過濾
-- CWA 常見缺值過濾
-
-常見無效值：
-
-```text
--99
--990
--991
--9991
--9997
--9998
--9999
-```
-
-濕度若為 0–1 比例格式，也會轉換成百分比格式。
-
----
-
-## 縣市名稱正規化
-
-CWA 與 GIS 行政區資料可能來自不同版本，因此會將名稱正規化：
-
-```text
-台 → 臺
-桃園縣 → 桃園市
-臺北縣 → 新北市
-臺中縣 → 臺中市
-臺南縣 → 臺南市
-高雄縣 → 高雄市
-```
-
-避免 API、GeoJSON、TopoJSON 之間因行政區名稱不同造成無法對應。
-
----
-
-## Leaflet GIS
-
-Leaflet 負責：
-
-- Map Zoom / Pan
-- Marker
-- Popup
-- Tooltip
-- GeoJSON Polygon
-- Hover Highlight
-- Click Event
-- Fit Bounds
-- GIS Layer Control
-
-底圖使用：
-
-```text
-Esri World Dark Gray Base Map
-```
-
----
-
-## 台灣 GIS 資料
-
-### 縣市邊界
-
-專案內：
-
-```text
-taiwan-counties.geojson
-```
-
-用於：
-
-- 台灣縣市 Polygon
-- Hover
-- Click
-- 縣市名稱
-- 平均氣溫
-- 自動 Fit Bounds
-
-### 鄉鎮市區
-
-使用 Taiwan Atlas：
-
-```text
-towns-10t.json
-```
-
-並透過：
-
-```text
-topojson-client
-```
-
-將 TopoJSON 轉換成 GeoJSON 後交由 Leaflet 顯示。
-
----
-
-## 測站 Popup
-
-Zoom 10 以上顯示氣象站 Marker。
-
-點擊 Marker 可查看：
-
-- 測站名稱
-- 縣市
-- 鄉鎮市區
-- 天氣現象
-- 氣溫
-- 相對濕度
-- 雨量
-- 風速
-- 氣壓
-- 觀測時間
-
----
-
-## 縣市選單順序
-
-目前依照：
-
-```text
-北部
-↓
-中部
-↓
-南部
-↓
-東部
-↓
-外島
-```
-
-排列。
-
-包含：
-
-```text
-基隆市
-臺北市
-新北市
-桃園市
-新竹市
-新竹縣
-苗栗縣
-臺中市
-彰化縣
-南投縣
-雲林縣
-嘉義市
-嘉義縣
-臺南市
-高雄市
-屏東縣
-宜蘭縣
-花蓮縣
-臺東縣
-澎湖縣
-金門縣
-連江縣
-```
-
----
-
-## 使用技術
-
-| 技術 | 用途 |
-| --- | --- |
-| Next.js | Web App / API Route |
-| React | 前端互動 UI |
-| JavaScript | 資料處理與互動邏輯 |
-| Leaflet | GIS 地圖 |
-| GeoJSON | 縣市行政邊界 |
-| TopoJSON | 鄉鎮市區資料 |
-| topojson-client | TopoJSON 轉 GeoJSON |
-| SVG | 歷史資料折線圖 |
-| CWA Open Data | 即時氣象資料來源 |
-| Neon PostgreSQL | 歷史氣象資料庫 |
-| @neondatabase/serverless | Neon Serverless DB Driver |
-| Vercel | Next.js 部署 / Server Function |
-| GitHub | Source Code / Version Control |
-| GitHub Actions | 每 30 分鐘資料擷取 |
-| Esri Map Tiles | 深色 GIS 底圖 |
-
----
-
-## 專案結構
+## 專案主要檔案
 
 ```text
 nchu_AIoT_Homework/
@@ -590,121 +325,56 @@ nchu_AIoT_Homework/
     │
     ├── taiwan-counties.geojson
     ├── package.json
-    ├── README.md
-    │
-    ├── index.html
-    ├── style.css
-    └── script.js
+    └── README.md
 ```
-
-其中 `index.html / style.css / script.js` 為早期 GitHub Pages 靜態版本；目前 Vercel 部署主要使用 `app/` 下的 Next.js 版本。
 
 ---
 
-## Environment Variables
+## 課程原始工具與目前實作差異
 
-Vercel Project 需要：
+課堂流程中有示範 **SQLite / Pandas / Streamlit**。
 
-```text
-CWA_API_KEY
-DATABASE_URL
-```
+本專案目前沒有使用這三項，而是將相同概念改成雲端 Web 架構：
 
-用途：
-
-| Variable | 用途 |
+| 課堂示範 | 本專案 |
 | --- | --- |
-| CWA_API_KEY | 呼叫中央氣象署 API |
-| DATABASE_URL | 連線 Neon PostgreSQL |
+| SQLite `data.db` | Neon PostgreSQL |
+| Python SQLite Query | Next.js + PostgreSQL SQL Query |
+| Streamlit | Next.js + React |
+| Local App | Vercel Cloud Deployment |
+| 手動執行資料取得 | GitHub Actions 每 30 分鐘自動執行 |
 
-實際金鑰與 Database Connection String 不應 commit 到 GitHub。
+因此資料庫、SQL Query、歷史資料與 Dashboard 的核心概念都有實作，但採用的是 **Vercel + Neon PostgreSQL + Next.js** 技術組合。
 
 ---
 
-## 舊版與目前版本差異
-
-### 第一版
+## 技術關鍵字
 
 ```text
-Browser
-  ↓
-CWA API
-  ↓
-JavaScript Memory
-  ↓
-Leaflet / Chart.js / Table
-  ↓
-GitHub Pages
+CWA Open Data
+REST API
+JSON
+Fetch API
+Next.js
+React
+Server API Route
+Leaflet
+GIS
+GeoJSON
+TopoJSON
+PostgreSQL
+SQL
+Neon
+Serverless Database
+Vercel
+Environment Variables
+Git
+GitHub
+GitHub Actions
+Cron
+Historical Time Series Data
 ```
 
-特性：
-
-- 沒有後端
-- 沒有 SQL
-- 沒有永久儲存
-- 沒有真正歷史資料
-
-### 目前版本
-
-```text
-GitHub Actions / Browser
-          ↓
-        Vercel
-          ↓
-      Next.js API
-       ↓       ↓
-     CWA      Neon
-               ↓
-          PostgreSQL
-               ↓
-        Historical API
-               ↓
-         GIS / History
-```
-
-現在已經具備：
-
-- Server API
-- PostgreSQL
-- SQL Query
-- 歷史資料
-- 定時擷取
-- 歷史折線圖
-- Vercel 自動部署
-
 ---
 
-## 後續可延伸
-
-- 單一測站歷史折線圖
-- 歷史濕度 / 雨量 / 風速圖
-- 24 小時 / 7 天時間篩選
-- Min / Max Temperature
-- CWA Forecast API
-- 一週天氣預報
-- 日期選擇器
-- SQL Aggregate Query
-- Dashboard 統計卡片
-- 異常氣象偵測
-- AI 天氣摘要
-- Telegram / LINE / Email 通知
-- 空氣品質 / AirBox 資料整合
-- Streamlit 分析 Dashboard
-
----
-
-## 參考
-
-- AIoT-DA L3 AI Vibe Coding 天氣預報 HW1
-- Central Weather Administration OpenData
-- Leaflet
-- Taiwan Atlas / Taiwan GIS
-- Neon PostgreSQL
-- Vercel
-- GitHub Actions
-- AirBox
-- `huanchen1107/taiwan-weather-map`
-
----
-
-**NCHU AIoT · CWA Open Data · Taiwan Weather GIS · Vercel · Neon PostgreSQL**
+**NCHU AIoT · CWA Open Data · GIS · SQL · PostgreSQL · Vercel · Neon**
