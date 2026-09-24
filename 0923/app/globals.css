@@ -546,3 +546,144 @@ h1 {
     width: calc(100vw - 20px);
   }
 }
+
+
+.history-panel {
+  position: absolute;
+  z-index: 910;
+  top: 110px;
+  right: 18px;
+  width: min(540px, calc(100vw - 414px));
+  max-height: calc(100vh - 180px);
+  padding: 14px;
+  border-radius: 18px;
+  display: grid;
+  grid-template-rows: auto 210px minmax(120px, 1fr);
+  gap: 10px;
+  overflow: hidden;
+}
+
+.history-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.history-head > div {
+  display: grid;
+  gap: 2px;
+}
+
+.history-head small,
+.history-head > span {
+  color: #94a3b8;
+  font-size: 0.72rem;
+}
+
+.history-chart {
+  min-height: 0;
+  padding: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 13px;
+  background: rgba(15, 23, 42, 0.56);
+}
+
+.history-chart svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.history-chart line {
+  stroke: rgba(148, 163, 184, 0.22);
+  stroke-width: 1;
+}
+
+.history-chart text {
+  fill: #94a3b8;
+  font-size: 10px;
+}
+
+.history-line {
+  fill: none;
+  stroke: #38bdf8;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.history-chart circle {
+  fill: #e0f2fe;
+  stroke: #0284c7;
+  stroke-width: 2;
+}
+
+.history-empty {
+  min-height: 100px;
+  display: grid;
+  place-items: center;
+  padding: 14px;
+  border: 1px dashed rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  color: #94a3b8;
+  text-align: center;
+  font-size: 0.78rem;
+}
+
+.history-table-wrap {
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.history-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.72rem;
+}
+
+.history-table-wrap th,
+.history-table-wrap td {
+  padding: 7px 8px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.08);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.history-table-wrap th {
+  position: sticky;
+  top: 0;
+  background: #0f172a;
+  color: #bae6fd;
+}
+
+.history-table-wrap td {
+  color: #e2e8f0;
+}
+
+@media (max-width: 1100px) {
+  .history-panel {
+    width: min(430px, calc(100vw - 36px));
+    grid-template-rows: auto 175px minmax(110px, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .history-panel {
+    left: 10px;
+    right: 10px;
+    top: auto;
+    bottom: 44px;
+    width: auto;
+    max-height: 46vh;
+    padding: 10px;
+    grid-template-rows: auto 140px minmax(90px, 1fr);
+  }
+
+  .summary-panel {
+    display: none;
+  }
+}
