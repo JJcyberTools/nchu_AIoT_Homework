@@ -1,23 +1,25 @@
-# AIoT｜台中情境美食＋停車推薦 Demo
+# AIoT v0.2｜情境感知台中美食＋停車推薦
 
-依據 2026-10-08 HackMD 新版提案製作的 **Streamlit 可互動樣板**。目前使用虛構餐廳與停車場，**沒有**串接即時車位、Neo4j、LLM 或路線 API。所有數字僅供介面及排序邏輯驗證。
+依據 HackMD 2026-10-08 新版「美食＋停車位提案」。**本版本為可執行聊天介面原型**，使用虛構餐廳與停車場資料。
 
 ## 啟動
 ```bash
+cd AIoT
 pip install -r requirements.txt
 streamlit run app.py
 ```
 
-## 已完成
-- 情境、預算、料理、停車步行上限與車程條件輸入
-- 硬條件過濾與軟偏好加權排序
-- 每家餐廳配主要停車場，顯示前三家、估計費用與說明
-- 明確標示虛構資料及未串接的即時資訊
+不設定 API Key 時為「本地規則展示模式」，並非真正 LLM。
+如需 LLM：建立 Dify Chatflow，設定環境變數 DIFY_API_KEY（不要提交密鑰），參考 [DIFY_CHATFLOW.md](DIFY_CHATFLOW.md)。
 
-## 後續
-1. 以真實餐廳與官方停車場資料替換 `data.py`
-2. 串接 Neo4j 知識圖譜、固定標籤與節點向量索引
-3. 串接官方車位快照、更新時間及路線 API
-4. 加入可追溯 YouTube / 文章來源與 LLM 意圖解析
+## v0.2
+- Streamlit 自然語言聊天
+- Dify LLM JSON 需求解析（有金鑰時），無金鑰本地規則展示
+- 顯示解析結果及待確認欄位
+- Python 硬條件過濾＋軟偏好排序，回傳 Top 3
+- 費用試算、資料來源與未確認事項明示
 
-資料來源構想：https://hackmd.io/@OkUqJVjTT4ug3cXLK9M9dQ/Sk6n7qiczx
+## 尚未完成
+Neo4j 圖譜、向量索引、真實餐廳來源、停車場 API、真實 ETA、營業時間核驗、影片時間戳記、真正的多輪條件記憶。**所有餐廳、車位、費率與車程皆為虛構資料**，不可用於真實導航或用餐決策。
+
+參考：https://hackmd.io/@OkUqJVjTT4ug3cXLK9M9dQ/Sk6n7qiczx
