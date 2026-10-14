@@ -1,256 +1,49 @@
-<!doctype html>
-<html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HW2 | Kaggle 多元線性迴歸分析</title>
-<style>
-:root{color-scheme:dark;--bg:#0b1222;--panel:#15243a;--line:#30425d;--ink:#ecf4ff;--soft:#9cafc8;--accent:#56e2b5}*{box-sizing:border-box}
-body{margin:0;background:radial-gradient(ellipse at top left,#1b3152,var(--bg) 65%);color:var(--ink);font:15px/1.65 system-ui,"Noto Sans TC",sans-serif}
-main{max-width:1160px;margin:0 auto;padding:36px 20px 90px}h1{font-size:clamp(30px,5vw,48px);margin:14px 0}h2{font-size:20px;margin:0 0 15px}p{margin:12px 0}
-.kicker{font-size:13px;letter-spacing:2px;color:var(--accent);font-weight:bold}.muted,.note{color:var(--soft)}.note{font-size:12px}
-.panel{background:linear-gradient(155deg,#192c47,#111e31);border:1px solid var(--line);border-radius:18px;padding:21px;margin:18px 0}
-.grid{display:grid;gap:16px}.grid2{grid-template-columns:repeat(2,minmax(0,1fr))}.grid3{grid-template-columns:repeat(3,minmax(0,1fr))}
-label{font-size:13px;display:block;color:var(--soft);margin:10px 0 5px}
-input,select{width:100%;border:1px solid #465974;border-radius:8px;background:#0b172a;color:var(--ink);padding:10px;font:inherit;min-width:0}
-.choice-group{display:flex;gap:7px;flex-wrap:wrap;max-height:140px;overflow:auto;padding:3px 0}.choice-group button{background:#102038;color:#c6d8ed;border:1px solid #465974;padding:8px 13px;border-radius:9px;font-size:13px}.choice-group button[aria-pressed="true"]{background:linear-gradient(110deg,#56e2b5,#7eb0ff);color:#081a2c;border-color:transparent}.choice-group button:focus-visible{outline:2px solid #fff;outline-offset:2px}input:disabled{opacity:.35;cursor:not-allowed;background:#263243}.disabled-field label{opacity:.45}
-button{padding:11px 19px;color:#091528;background:linear-gradient(110deg,var(--accent),#7eb0ff);border:0;border-radius:10px;font:inherit;font-weight:700;cursor:pointer}
-button:disabled{opacity:.5;cursor:wait}.metric{background:#172840;padding:20px;border-radius:14px;border:1px solid var(--line)}
-.metric span{font-size:12px;color:var(--soft)}.metric strong{display:block;font-size:28px;margin:6px 0;font-variant-numeric:tabular-nums}
-svg{width:100%;height:auto;display:block}.scroll{overflow-x:auto}table{border-collapse:collapse;width:100%;min-width:650px;font-size:13px}
-th,td{padding:11px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--soft)}tr.selected{background:#21405a}
-code.formula{display:block;background:#0b172a;padding:18px;border-radius:10px;overflow-wrap:anywhere;white-space:normal;color:#9df5d2}
-.hidden{display:none}#status{min-height:26px;color:var(--accent)}#predictOutput{font-size:27px;color:var(--accent);font-weight:700}
-a{color:#b5d2ff}.foot{color:var(--soft);font-size:12px;margin-top:40px}@media(max-width:780px){.grid2,.grid3{grid-template-columns:1fr}main{padding:20px 12px}.panel{padding:15px}}
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>HW2 | Kaggle 洪水機率預測分析</title><style>
+:root{color-scheme:dark;--bg:#0b1222;--panel:#15243a;--line:#30425d;--ink:#ecf4ff;--soft:#a9bed8;--accent:#56e2b5}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top left,#1b3152,var(--bg) 65%);color:var(--ink);font:15px/1.65 system-ui,"Noto Sans TC",sans-serif}
+main{max-width:1160px;margin:auto;padding:32px 20px 90px}h1{font-size:clamp(27px,4vw,43px);margin:10px 0}h2{font-size:21px;margin:0 0 14px}h3{margin:0 0 8px;font-size:16px}p{margin:8px 0 15px}.muted,.note{color:var(--soft)}.note{font-size:13px}.kicker{color:var(--accent);letter-spacing:2px;font-size:13px;font-weight:700}
+.panel{background:linear-gradient(155deg,#192c47,#111e31);border:1px solid var(--line);border-radius:18px;padding:22px;margin:20px 0}.grid{display:grid;gap:14px}.stats{grid-template-columns:repeat(4,minmax(0,1fr))}.two{grid-template-columns:repeat(2,minmax(0,1fr))}.stat{padding:17px;background:#172840;border:1px solid var(--line);border-radius:13px}.stat small{display:block;color:var(--soft)}.stat strong{font-size:27px;font-variant-numeric:tabular-nums}
+a{color:#b5d2ff}.scroll{overflow:auto}table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{color:var(--soft)}tr.best{background:#1c4549}button{border:0;border-radius:9px;background:linear-gradient(110deg,var(--accent),#7eb0ff);color:#0b1827;font:inherit;font-weight:700;padding:10px 18px;cursor:pointer}
+.fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}label{display:block;font-size:12px;color:var(--soft);margin-bottom:5px;overflow-wrap:anywhere}input{width:100%;padding:9px;background:#0b172a;border:1px solid #526783;color:var(--ink);border-radius:8px;font:inherit}#pred{font-size:25px;color:var(--accent);font-weight:700}#chart{width:100%;height:auto;display:block}.pill{display:inline-block;border:1px solid #416d73;color:#8cf2d5;padding:3px 10px;border-radius:99px;font-size:12px}.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.step{padding:15px;border:1px solid var(--line);border-radius:12px;background:#13243a}.step b{color:#9df5d2}.foot{font-size:12px;color:var(--soft);margin-top:32px}
+@media(max-width:760px){main{padding:20px 12px}.panel{padding:15px}.stats,.two,.steps{grid-template-columns:repeat(2,minmax(0,1fr))}.fields{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:480px){.stats,.two,.steps{grid-template-columns:1fr}}
 </style></head><body><main>
-<div class="kicker">NCHU · AIoT · HW2 · Kaggle Regression</div>
-<h1>HW2 · 多元線性迴歸分析平台</h1><p class="muted">沿用 DIC2 互動原型，供 Kaggle 公開資料集的探索與預測展示。HW2 正式分析、CRISP-DM、特徵選擇與模型評估請見同資料夾的 Jupyter Notebook。</p>
-<section class="panel"><h2>01 · 載入資料</h2>
-<div class="grid grid3"><div><label for="problem">選擇 Problem</label><select id="problem"><option value="custom">HW2 · Kaggle CSV 資料集</option><option value="startup">原型示範 · 50 Startups</option><option value="boston">原型示範 · Boston Housing</option></select></div>
-<div id="fileField" class="disabled-field"><label for="file">本機 CSV（加分選項限定）</label><input type="file" id="file" accept=".csv,text/csv" disabled></div><div id="urlField" class="disabled-field"><label for="url">CSV 網址（加分選項限定）</label><input id="url" type="url" placeholder="https://.../data.csv" disabled></div></div>
-<div class="grid grid3"><div><label id="targetLabel">目標變數 Y（點選欄位）</label><select id="target" class="hidden" aria-hidden="true" tabindex="-1"><option>Profit</option></select><div id="targetButtons" class="choice-group" role="group" aria-labelledby="targetLabel"></div></div>
-<div><label id="kLabelTitle">特徵數 k：<span id="kLabel">2</span></label><input id="k" type="hidden" value="2"><div id="kButtons" class="choice-group" role="group" aria-labelledby="kLabelTitle"></div></div><div><label>執行</label><button id="go">開始分析</button></div></div>
-<p class="note">內建資料隨 GitHub 專案提供，無須外部 API。前端以訓練集逐步加入特徵並建立 OLS，固定 80/20 拆分；結果可能與教師不同。CSV 網址需允許跨來源存取。</p>
-<div id="status" role="status" aria-live="polite"></div></section>
-<div id="output" class="hidden">
-<div class="grid grid3"><div class="metric"><span>測試 RMSE ↓</span><strong id="rmse"></strong><span>愈小愈好</span></div>
-<div class="metric"><span>測試 R² ↑</span><strong id="r2"></strong><span>模型對測試資料的解釋程度</span></div>
-<div class="metric"><span>樣本數</span><strong id="sample"></strong><span id="split"></span></div></div>
-<div class="grid grid2"><section class="panel"><h2>02 · RMSE 變化</h2><svg id="rmsePlot" viewBox="0 0 510 245" aria-label="RMSE 曲線"></svg></section>
-<section class="panel"><h2>03 · R² 變化</h2><svg id="r2Plot" viewBox="0 0 510 245" aria-label="R squared 曲線"></svg></section></div>
-<section class="panel"><h2>04 · 特徵數與模型比較</h2><p class="note">前向特徵選擇僅依訓練資料決定加入哪些欄位；測試集用於比較，不參與逐步選擇。</p><div class="scroll"><table><thead><tr><th>特徵數</th><th>選擇的特徵</th><th>測試 RMSE</th><th>測試 R²</th></tr></thead><tbody id="tableRows"></tbody></table></div></section>
-<section class="panel"><h2>05 · 回歸方程式與即時預測</h2><p id="active"></p><code id="equation" class="formula"></code><div class="grid grid3" id="inputs"></div>
-<p><button id="predict">套用輸入值並預測</button> <span id="predictOutput"></span></p><p class="note">類別特徵採 one-hot 編碼，對應輸入值 0 或 1。試算只在本機瀏覽器進行。</p></section>
-<section class="panel"><h2>06 · 課堂分析結論</h2><p id="conclusion"></p><p id="ethics" class="note"></p></section></div>
-<p class="foot">資料來源：<a href="https://raw.githubusercontent.com/Avik-Jain/100-Days-Of-ML-Code/master/datasets/50_Startups.csv">50 Startups</a>、<a href="https://raw.githubusercontent.com/selva86/datasets/master/BostonHousing.csv">Boston Housing</a>。<a href="https://github.com/huanchen1107/AIoT-DIC2-MultipleLR/">老師參考專案</a>。本作品僅供課堂教學，不應用於真實決策。</p>
-</main><script>
-"use strict";
-const el=id=>document.getElementById(id);
-const urls={startup:"data/startup.csv",boston:"data/boston.csv"};
-let current=null,sourceRows=null,sourceHeaders=null;
-const fmt=v=>Number.isFinite(v)?v.toLocaleString("zh-TW",{maximumFractionDigits:3}):"—";
-function parseCSV(text){
- text=text.replace(/^\uFEFF/,"");let rows=[],row=[],cell="",q=false;
- for(let i=0;i<text.length;i++){let c=text[i];
-  if(q){if(c==='"'&&text[i+1]==='"'){cell+='"';i++;}else if(c==='"')q=false;else cell+=c;}
-  else if(c==='"')q=true;
-  else if(c===","){row.push(cell);cell="";}
-  else if(c==="\r"||c==="\n"){if(c==="\r"&&text[i+1]==="\n")i++;row.push(cell);if(row.some(x=>x.trim()))rows.push(row);row=[];cell="";}
-  else cell+=c;
- }
- row.push(cell);if(row.some(x=>x.trim()))rows.push(row);
- if(rows.length<2)throw Error("CSV 至少需要表頭和資料");
- let headers=rows.shift().map(s=>s.trim());
- if(new Set(headers).size!==headers.length)throw Error("CSV 有重複欄位名稱");
- return {headers,rows:rows.filter(r=>r.length===headers.length)};
-}
-function prepare(headers,rows,target){
- let t=headers.indexOf(target);if(t<0)throw Error("目標欄位不存在");
- let data=rows.filter(r=>r[t].trim()!==""&&Number.isFinite(Number(r[t])));
- if(data.length<15)throw Error("至少需要 15 筆有效數值資料");
- let columns=[],names=[];
- headers.forEach((h,j)=>{
-  if(j===t)return;let vals=data.map(r=>r[j].trim());
-  if(vals.every(v=>v!==""&&Number.isFinite(Number(v)))){names.push(h);columns.push(vals.map(Number));}
-  else{let uniq=[...new Set(vals)].sort();if(uniq.length>20)return;uniq.slice(1).forEach(u=>{names.push(h+" = "+u);columns.push(vals.map(v=>Number(v===u)));});}
- });
- if(!names.length)throw Error("沒有可用自變數");
- if(names.length>60)throw Error("特徵欄位過多，請先縮減欄位");
- return {x:data.map((r,i)=>columns.map(col=>col[i])),y:data.map(r=>Number(r[t])),names};
-}
-function linearSystem(A,b){
- const n=b.length,m=A.map((r,i)=>[...r,b[i]]);
- for(let c=0;c<n;c++){
-  let p=c;for(let r=c+1;r<n;r++)if(Math.abs(m[r][c])>Math.abs(m[p][c]))p=r;
-  [m[c],m[p]]=[m[p],m[c]];
-  if(Math.abs(m[c][c])<1e-12)throw Error("矩陣奇異");
-  let den=m[c][c];for(let j=c;j<=n;j++)m[c][j]/=den;
-  for(let r=0;r<n;r++)if(r!==c){let z=m[r][c];for(let j=c;j<=n;j++)m[r][j]-=z*m[c][j];}
- }
- return m.map(r=>r[n]);
-}
-function fit(x,y,ids){
- let n=x.length,p=ids.length+1;
- let means=ids.map(c=>x.reduce((s,r)=>s+r[c],0)/n);
- let scales=ids.map((c,j)=>Math.sqrt(x.reduce((s,r)=>s+(r[c]-means[j])**2,0)/n)||1);
- let transformed=x.map(r=>[1,...ids.map((c,j)=>(r[c]-means[j])/scales[j])]);
- let A=Array.from({length:p},()=>Array(p).fill(0)),b=Array(p).fill(0);
- for(let i=0;i<n;i++)for(let j=0;j<p;j++){b[j]+=transformed[i][j]*y[i];for(let k=0;k<p;k++)A[j][k]+=transformed[i][j]*transformed[i][k];}
- let beta;try{beta=linearSystem(A,b);}catch(err){for(let j=1;j<p;j++)A[j][j]+=1e-7;beta=linearSystem(A,b);}
- let coef=beta.slice(1).map((v,j)=>v/scales[j]);
- let intercept=beta[0]-coef.reduce((s,v,j)=>s+v*means[j],0);
- const frozenIds=[...ids];
- return {ids:frozenIds,coef,intercept,predict:r=>intercept+frozenIds.reduce((s,c,j)=>s+r[c]*coef[j],0)};
-}
-function score(model,x,y){
- let p=x.map(r=>model.predict(r)),mean=y.reduce((a,b)=>a+b,0)/y.length;
- let err=y.reduce((s,v,i)=>s+(v-p[i])**2,0),total=y.reduce((s,v)=>s+(v-mean)**2,0);
- return {rmse:Math.sqrt(err/y.length),r2:total>0?1-err/total:0};
-}
-function permutation(n){
- let ids=Array.from({length:n},(_,i)=>i),seed=20261014;
- function rand(){seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;}
- for(let i=n-1;i>0;i--){let j=Math.floor(rand()*(i+1));[ids[i],ids[j]]=[ids[j],ids[i]];}return ids;
-}
-function analyze(data){
- let ids=permutation(data.y.length),cut=Math.floor(data.y.length*.8);
- let train=ids.slice(0,cut),test=ids.slice(cut);
- let xt=train.map(i=>data.x[i]),yt=train.map(i=>data.y[i]),xv=test.map(i=>data.x[i]),yv=test.map(i=>data.y[i]);
- let selected=[],results=[],cap=Math.min(20,data.names.length,xt.length-3);
- for(let k=1;k<=cap;k++){
-  let chosen=null;
-  for(let c=0;c<data.names.length;c++){
-   if(selected.includes(c))continue;
-   let model=fit(xt,yt,[...selected,c]),quality=score(model,xt,yt).rmse;
-   if(!Number.isFinite(quality))continue;
-   if(!chosen||quality<chosen.loss){chosen={c,loss:quality};}
-  }
-  if(!chosen)break;
-  selected.push(chosen.c);
-  let model=fit(xt,yt,selected);
-  results.push({k,features:selected.map(i=>data.names[i]),model,...score(model,xv,yv)});
- }
- if(!results.length)throw Error("無法計算模型");
- return {...data,results,train:train.length,test:test.length};
-}
-function plot(id,items,key,color){
- let W=510,H=245,L=56,R=20,T=20,B=40,values=items.map(v=>v[key]);
- let mn=Math.min(...values),mx=Math.max(...values),pad=Math.max(1e-7,(mx-mn)*.2);
- let low=mn-pad,high=mx+pad;
- let xx=i=>L+(W-L-R)*(items.length===1?.5:i/(items.length-1));
- let yy=v=>T+(H-T-B)*(high-v)/(high-low);
- let markup="";
- for(let i=0;i<=4;i++){let v=low+(high-low)*i/4,Y=yy(v);
- markup+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+Y+'" y2="'+Y+'" stroke="#31445d" stroke-dasharray="3 5"/>';
- markup+='<text x="'+(L-8)+'" y="'+(Y+4)+'" text-anchor="end" fill="#a9bad3" font-size="11">'+(key==="r2"?v.toFixed(3):fmt(v))+"</text>";}
- markup+='<polyline fill="none" stroke="'+color+'" stroke-width="3" points="'+items.map((v,i)=>xx(i)+","+yy(v[key])).join(" ")+'"/>';
- items.forEach((v,i)=>{markup+='<circle cx="'+xx(i)+'" cy="'+yy(v[key])+'" r="'+(v.k===Number(el("k").value)?6:4)+'" fill="'+color+'"><title>k='+v.k+': '+fmt(v[key])+'</title></circle>';
- markup+='<text x="'+xx(i)+'" y="'+(H-14)+'" text-anchor="middle" fill="#a9bad3" font-size="12">'+v.k+"</text>";});
- el(id).innerHTML=markup;
-}
-function renderKButtons(){
- const group=el("kButtons");group.replaceChildren();
- const max=current?current.results.length:5;
- for(let n=1;n<=max;n++){
-  const b=document.createElement("button");b.type="button";b.textContent=String(n);
-  b.setAttribute("aria-pressed",String(n===Number(el("k").value)));
-  b.addEventListener("click",()=>{el("k").value=n;render();});
-  group.append(b);
- }
-}
-function renderTargetButtons(){
- const group=el("targetButtons");group.replaceChildren();
- for(const option of el("target").options){
-  const b=document.createElement("button");b.type="button";b.textContent=option.value;
-  b.setAttribute("aria-pressed",String(option.value===el("target").value));
-  b.addEventListener("click",()=>{if(option.value===el("target").value)return;
-   el("target").value=option.value;
-   el("target").dispatchEvent(new Event("change"));
-   renderTargetButtons();
-  });group.append(b);
- }
-}
-function syncCustomFields(){
- const enabled=el("problem").value==="custom";
- for(const id of ["file","url"]){el(id).disabled=!enabled;el(id+"Field").classList.toggle("disabled-field",!enabled);}
- if(!enabled){el("file").value="";el("url").value="";}
-}
-function render(){
- if(!current)return;
- let all=current.results,k=Math.max(1,Math.min(all.length,Number(el("k").value))),r=all[k-1];
- el("k").value=k;el("kLabel").textContent=k;renderKButtons();
- el("rmse").textContent=fmt(r.rmse);el("r2").textContent=r.r2.toFixed(4);
- el("sample").textContent=current.y.length;el("split").textContent="訓練 "+current.train+" 筆／測試 "+current.test+" 筆";
- plot("rmsePlot",all,"rmse","#56e2b5");plot("r2Plot",all,"r2","#89aaff");
- el("tableRows").replaceChildren();
- all.forEach(x=>{let tr=document.createElement("tr");if(x.k===k)tr.className="selected";
- [x.k,x.features.join("、"),fmt(x.rmse),x.r2.toFixed(4)].forEach(value=>{let td=document.createElement("td");td.textContent=value;tr.append(td);});el("tableRows").append(tr);});
- el("active").textContent="目前特徵："+r.features.join("、");
- el("equation").textContent="ŷ = "+fmt(r.model.intercept)+" "+r.features.map((name,i)=>(r.model.coef[i]<0?"−":"+")+" "+fmt(Math.abs(r.model.coef[i]))+" × ["+name+"]").join(" ");
- el("inputs").replaceChildren();
- r.features.forEach((name,j)=>{let container=document.createElement("div"),label=document.createElement("label"),input=document.createElement("input");
- label.textContent=name;input.type="number";input.step="any";input.dataset.column=r.model.ids[j];
- let c=r.model.ids[j];input.value=(current.x.reduce((s,row)=>s+row[c],0)/current.x.length).toFixed(3);
- container.append(label,input);el("inputs").append(container);});
- el("predictOutput").textContent="";
- let best=all.reduce((a,b)=>b.rmse<a.rmse?b:a,all[0]);
- el("conclusion").textContent="本次固定切分下，k = "+best.k+" 的 RMSE 最低（"+fmt(best.rmse)+"），R² = "+best.r2.toFixed(4)+"；選出的特徵有："+best.features.join("、")+"。特徵數愈多不一定能改善測試表現。此為單一次測試切分，結果不可當成穩定的泛化保證。";
- el("ethics").textContent=el("problem").value==="boston"?"Boston Housing 為歷史教學資料，包含具爭議的種族相關特徵 b；不應將其用於實際住宅定價或真實決策。":"";
-}
-function fillTarget(headers,preferred){
- el("target").replaceChildren();headers.forEach(name=>{let option=document.createElement("option");option.value=name;option.textContent=name;el("target").append(option);});
- el("target").value=headers.includes(preferred)?preferred:headers[headers.length-1];renderTargetButtons();
-}
-async function run(){
- el("go").disabled=true;el("status").textContent="正在讀取並計算資料…";
- try{
-  let file=el("file").files[0],customUrl=el("url").value.trim(),kind=el("problem").value,body;
-  if(file)body=await file.text();
-  else{let url=customUrl||urls[kind];
-   if(!url)throw Error("請選擇 CSV 檔案或輸入 CSV 網址");
-   if(customUrl&&!/^https:\/\//i.test(customUrl))throw Error("CSV 網址必須使用 HTTPS");
-   let response=await fetch(url);if(!response.ok)throw Error("CSV 載入失敗："+response.status);body=await response.text();}
-  let parsed=parseCSV(body);sourceRows=parsed.rows;sourceHeaders=parsed.headers;
-  let desired=kind==="startup"?"Profit":kind==="boston"?"medv":el("target").value;
-  fillTarget(parsed.headers,desired);
-  current=analyze(prepare(parsed.headers,parsed.rows,el("target").value));
-  el("k").max=current.results.length;el("k").value=Math.min(2,current.results.length);
-  el("output").classList.remove("hidden");render();
-  el("status").textContent="✓ 已分析 "+current.y.length+" 筆資料與 "+current.names.length+" 個編碼後特徵。";
- }catch(e){el("status").textContent="無法分析："+e.message+"。如被瀏覽器阻擋讀取，請使用 GitHub Pages 網址或上傳本機 CSV。";}
- finally{el("go").disabled=false;}
-}
-el("problem").addEventListener("change",()=>{syncCustomFields();sourceRows=null;sourceHeaders=null;});
-el("go").addEventListener("click",run);
-
-el("target").addEventListener("change",()=>{if(!sourceRows)return;try{current=analyze(prepare(sourceHeaders,sourceRows,el("target").value));el("k").max=current.results.length;el("k").value=1;render();el("status").textContent="✓ 已重新選擇目標欄位並分析";}catch(e){el("status").textContent=e.message;}});
-function predictFromInputs(){
- const out=el("predictOutput");
- if(!current){out.textContent="請先執行資料分析";return;}
- const selected=current.results[Number(el("k").value)-1];
- if(!selected||!selected.model){out.textContent="找不到目前模型，請重新分析";return;}
- const model=selected.model;
- // Use the actual selected feature list as the source of truth. Do not compare
- // stale UI element counts with a model from another slider selection.
- const featureIds=Array.isArray(model.ids)?model.ids:[];
- const coefficients=Array.isArray(model.coef)?model.coef:[];
- if(!featureIds.length||featureIds.length!==coefficients.length){
-  out.textContent="模型係數不完整，請重新執行分析";return;
- }
- const controls=[...el("inputs").children].map(container=>container.querySelector('input[type="number"]'));
- const values=[];
- for(let j=0;j<featureIds.length;j++){
-  const input=controls[j];
-  if(!input){out.textContent="預測欄位尚未更新，請重新調整 k";render();return;}
-  const raw=input.value.trim();
-  const value=Number(raw);
-  if(raw===""||!Number.isFinite(value)){
-   out.textContent="請輸入有效數字："+selected.features[j];input.focus();return;
-  }
-  values.push(value);
- }
- let prediction=Number(model.intercept);
- for(let j=0;j<featureIds.length;j++)prediction+=Number(coefficients[j])*values[j];
- if(!Number.isFinite(prediction)){out.textContent="計算結果無效，請檢查數值或重新分析";return;}
- out.textContent="預測值 ≈ "+fmt(prediction);
-}
-el("predict").addEventListener("click",predictFromInputs);
-syncCustomFields();renderKButtons();el("status").textContent="請選擇 Kaggle CSV 並按開始分析；正式 HW2 請執行 Notebook。";
+<div class="kicker">NCHU · AIoT · HW2 · MULTIPLE LINEAR REGRESSION</div><h1>洪水機率預測 · 多元線性迴歸</h1>
+<p class="muted">Kaggle <b>Regression with a Flood Prediction Dataset</b>｜直接呈現真實資料分析成果，無需選擇 DIC2 原型題目、上傳 CSV 或手動開始分析。</p>
+<section class="panel"><h2>01 · 研究資料與實驗設定</h2><div class="grid stats">
+<div class="stat"><small>Kaggle 原始資料</small><strong>1,117,957</strong><small>筆資料</small></div>
+<div class="stat"><small>本次分析樣本</small><strong>3,000</strong><small>固定種子抽樣</small></div>
+<div class="stat"><small>原始特徵</small><strong>20</strong><small>數值型特徵</small></div>
+<div class="stat"><small>訓練 / 測試</small><strong>2,400 / 600</strong><small>80% / 20%</small></div></div>
+<p class="note">預測目標 Y：<b>FloodProbability</b>。使用者提供的 Kaggle train.csv，random_state = 42；所有評估數字來自 3,000 筆抽樣的測試集，不代表完整 111 萬筆的模型成績。</p></section>
+<section class="panel"><h2>02 · 最佳模型與評估指標</h2><span class="pill">最佳測試 RMSE：Ridge · 全部 20 特徵</span><div class="grid stats" style="margin-top:14px">
+<div class="stat"><small>RMSE ↓</small><strong>0.019644</strong></div><div class="stat"><small>R² ↑</small><strong>0.860401</strong></div><div class="stat"><small>MAE ↓</small><strong>0.015378</strong></div><div class="stat"><small>Adjusted R²</small><strong>0.855579</strong></div></div>
+<p class="note">Ridge(alpha=1.0)；測試 MSE = 0.000385897。OLS 的 RMSE = 0.019645，差異很小。</p></section>
+<section class="panel"><h2>03 · 12 組模型與特徵選擇比較</h2><p class="note">依測試 RMSE 由小到大排序。特徵選擇在訓練資料上執行；RFE、SelectKBest、SFS 使用 14 個特徵。</p>
+<div class="scroll"><table><thead><tr><th>特徵選擇</th><th>迴歸模型</th><th>特徵數</th><th>MAE</th><th>RMSE</th><th>R²</th></tr></thead><tbody id="modelRows"></tbody></table></div>
+<h3 style="margin-top:20px">RMSE 比較（越低越好）</h3><svg id="chart" viewBox="0 0 800 335" role="img" aria-label="12 組模型測試 RMSE 長條圖"></svg></section>
+<section class="panel"><h2>04 · 洪水資料預覽</h2><p class="note">以下為固定種子抽樣的前 5 筆真實資料，僅顯示部分欄位；完整資料含 20 個預測特徵。</p>
+<div class="scroll"><table><thead><tr><th>MonsoonIntensity</th><th>TopographyDrainage</th><th>RiverManagement</th><th>Deforestation</th><th>FloodProbability (Y)</th></tr></thead><tbody id="previewRows"></tbody></table></div></section>
+<section class="panel"><h2>05 · Ridge 模型即時預測</h2><p>使用本次訓練的 <b>20 特徵 Ridge 迴歸係數</b>進行瀏覽器端試算。下方預先填入一筆抽樣資料的特徵值，可以直接按「預測」。</p>
+<div id="fields" class="fields"></div><p style="margin-top:17px"><button id="predict">計算洪水機率預測值</button> <button id="reset" type="button" style="background:#243a53;color:#e2eeff;border:1px solid #58728b">恢復範例數值</button></p>
+<div id="pred" aria-live="polite">—</div><p class="note">此為連續值迴歸，不保證輸出一定介於 0～1；結果僅供課堂示範，不可作為實際防災決策。</p></section>
+<section class="panel"><h2>06 · CRISP-DM 六階段</h2><div class="steps">
+<div class="step"><b>1. Business Understanding</b><p>以 20 個環境與基礎設施特徵預測洪水機率。</p></div>
+<div class="step"><b>2. Data Understanding</b><p>檢查 Kaggle 資料結構、目標分布與缺失值。</p></div>
+<div class="step"><b>3. Data Preparation</b><p>抽樣 3,000 筆，80/20 切分、補值與標準化。</p></div>
+<div class="step"><b>4. Modeling</b><p>OLS、Ridge、Lasso 與三種特徵選擇方法。</p></div>
+<div class="step"><b>5. Evaluation</b><p>比較 MAE、MSE、RMSE、R²、Adjusted R²。</p></div>
+<div class="step"><b>6. Deployment</b><p>使用模型係數試算新輸入資料的預測結果。</p></div></div>
+<p class="note" style="margin-top:16px">研究結論：這次固定抽樣下，全部 20 特徵的 Ridge 最佳；減少至 14 個特徵反而使測試 RMSE 上升。單次切分結果不保證泛化表現。</p></section>
+<p class="foot">資料來源：<a href="https://www.kaggle.com/competitions/playground-series-s4e5/data">Kaggle Playground Series S4E5</a>。<a href="https://github.com/JJcyberTools/nchu_AIoT_Homework/tree/main/HW2">Notebook 與報告原始碼</a>。模型係數由同一 3,000 筆資料抽樣與訓練切分重新擬合，結果可能有微小浮點差異。</p>
+</main><script>"use strict";
+const names=["MonsoonIntensity","TopographyDrainage","RiverManagement","Deforestation","Urbanization","ClimateChange","DamsQuality","Siltation","AgriculturalPractices","Encroachments","IneffectiveDisasterPreparedness","DrainageSystems","CoastalVulnerability","Landslides","Watersheds","DeterioratingInfrastructure","PopulationScore","WetlandLoss","InadequatePlanning","PoliticalFactors"],coef=[0.005523958,0.005858666,0.005769449,0.005608721,0.005594835,0.005789041,0.005885715,0.005622409,0.005636655,0.005402175,0.005409934,0.005857812,0.005725362,0.005347905,0.005913396,0.005410927,0.005976375,0.005548612,0.005179055,0.005784948],example=[7,5,8,4,8,4,8,4,3,7,3,5,7,4,7,2,3,6,7,2],results=[["All features","Ridge",20,0.015377859,0.019644266,0.86040132],["All features","OLS",20,0.015375528,0.019644996,0.860390944],["All features","Lasso",20,0.016471419,0.020334649,0.850416724],["SelectKBest","OLS",14,0.027169195,0.03347008,0.594749847],["SelectKBest","Ridge",14,0.027170017,0.033470363,0.594742982],["SFS","OLS",14,0.0274705,0.033681168,0.589622093],["SFS","Ridge",14,0.027470971,0.033681416,0.589616039],["SelectKBest","Lasso",14,0.027569734,0.033826118,0.586082268],["SFS","Lasso",14,0.02785555,0.03403101,0.581052729],["RFE","Ridge",14,0.028160722,0.034242336,0.575833419],["RFE","OLS",14,0.028160806,0.034242881,0.575819919],["RFE","Lasso",14,0.028327256,0.034444737,0.570804224]],preview=[[7,5,8,4,0.56],[5,3,10,9,0.575],[5,6,2,6,0.51],[7,3,6,4,0.53],[6,5,7,7,0.59]];
+const $=id=>document.getElementById(id),fmt=(v,n=6)=>Number(v).toFixed(n);
+results.forEach((r,i)=>{const tr=document.createElement("tr");if(i===0)tr.className="best";r.forEach((v,j)=>{const td=document.createElement("td");td.textContent=j>=3?fmt(v,j===5?4:6):v;tr.append(td)});$("modelRows").append(tr)});
+preview.forEach(r=>{const tr=document.createElement("tr");r.forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.append(td)});$("previewRows").append(tr)});
+names.forEach((name,i)=>{const div=document.createElement("div"),lab=document.createElement("label"),inp=document.createElement("input");lab.textContent=(i+1)+". "+name;inp.type="number";inp.step="any";inp.value=example[i];inp.dataset.i=i;div.append(lab,inp);$("fields").append(div)});
+$("predict").addEventListener("click",()=>{let p=-0.05274714568844163;for(const input of $("fields").querySelectorAll("input")){const raw=input.value.trim(),v=Number(raw);if(!raw||!Number.isFinite(v)){$("pred").textContent="請輸入有效數字："+names[Number(input.dataset.i)];return}p+=coef[Number(input.dataset.i)]*v} $("pred").textContent="預測 FloodProbability ≈ "+fmt(p,6)});
+$("reset").addEventListener("click",()=>{$("fields").querySelectorAll("input").forEach((e,i)=>e.value=example[i]);$("pred").textContent="—"});
+const svg=$("chart"),ns="http://www.w3.org/2000/svg";function line(x1,y1,x2,y2,color){let e=document.createElementNS(ns,"line");for(const [k,v] of Object.entries({x1,y1,x2,y2,stroke:color}))e.setAttribute(k,v);svg.append(e)}
+function text(x,y,t){let e=document.createElementNS(ns,"text");e.setAttribute("x",x);e.setAttribute("y",y);e.setAttribute("fill","#d5e6fa");e.setAttribute("font-size","11");e.textContent=t;svg.append(e)}
+results.forEach((r,i)=>{const y=12+i*26; text(7,y+15,r[0]+" / "+r[1]);let rect=document.createElementNS(ns,"rect");rect.setAttribute("x",220);rect.setAttribute("y",y+2);rect.setAttribute("width",Math.round(r[4]/.04*425));rect.setAttribute("height",16);rect.setAttribute("rx",4);rect.setAttribute("fill",i===0?"#56e2b5":"#7eb0ff");svg.append(rect);text(665,y+15,fmt(r[4],5))});
 </script></body></html>
