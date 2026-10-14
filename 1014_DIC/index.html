@@ -193,7 +193,25 @@ el("problem").addEventListener("change",()=>{el("file").value="";el("url").value
 el("go").addEventListener("click",run);
 el("k").addEventListener("input",render);
 el("target").addEventListener("change",()=>{if(!sourceRows)return;try{current=analyze(prepare(sourceHeaders,sourceRows,el("target").value));el("k").max=current.results.length;el("k").value=1;render();el("status").textContent="✓ 已重新選擇目標欄位並分析";}catch(e){el("status").textContent=e.message;}});
-el("predict").addEventListener("click",()=>{if(!current)return;let model=current.results[Number(el("k").value)-1].model;let row=Array(current.names.length).fill(0);for(let input of el("inputs").querySelectorAll("input")){if(input.value===""||!Number.isFinite(Number(input.value))){el("predictOutput").textContent="請輸入有效數字";return;}row[Number(input.dataset.column)]=Number(input.value);}
- el("predictOutput").textContent="預測值 ≈ "+fmt(model.predict(row));});
+function predictFromInputs(){
+ const out=el("predictOutput");
+ if(!current){out.textContent="請先執行資料分析";return;}
+ const selected=current.results[Number(el("k").value)-1];
+ if(!selected||!selected.model){out.textContent="找不到目前模型，請重新分析";return;}
+ const model=selected.model;
+ const controls=[...el("inputs").querySelectorAll("input")];
+ if(controls.length!==model.ids.length){out.textContent="輸入欄位與模型不一致，請重新選擇特徵數";return;}
+ let prediction=Number(model.intercept);
+ if(!Number.isFinite(prediction)){out.textContent="模型截距無效，請重新分析";return;}
+ for(let j=0;j<controls.length;j++){
+  const input=controls[j],column=Number(input.dataset.column),value=Number(input.value),coefficient=Number(model.coef[j]);
+  if(input.value.trim()===""||!Number.isFinite(value)){out.textContent="請輸入有效數字："+selected.features[j];input.focus();return;}
+  if(column!==model.ids[j]||!Number.isFinite(coefficient)){out.textContent="模型特徵對應錯誤，請重新分析";return;}
+  prediction+=coefficient*value;
+ }
+ if(!Number.isFinite(prediction)){out.textContent="計算結果無效，請檢查輸入數值";return;}
+ out.textContent="預測值 ≈ "+fmt(prediction);
+}
+el("predict").addEventListener("click",predictFromInputs);
 run();
 </script></body></html>
