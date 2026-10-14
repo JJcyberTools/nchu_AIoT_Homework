@@ -199,17 +199,28 @@ function predictFromInputs(){
  const selected=current.results[Number(el("k").value)-1];
  if(!selected||!selected.model){out.textContent="找不到目前模型，請重新分析";return;}
  const model=selected.model;
- const controls=[...el("inputs").querySelectorAll("input")];
- if(controls.length!==model.ids.length){out.textContent="輸入欄位與模型不一致，請重新選擇特徵數";return;}
- let prediction=Number(model.intercept);
- if(!Number.isFinite(prediction)){out.textContent="模型截距無效，請重新分析";return;}
- for(let j=0;j<controls.length;j++){
-  const input=controls[j],column=Number(input.dataset.column),value=Number(input.value),coefficient=Number(model.coef[j]);
-  if(input.value.trim()===""||!Number.isFinite(value)){out.textContent="請輸入有效數字："+selected.features[j];input.focus();return;}
-  if(column!==model.ids[j]||!Number.isFinite(coefficient)){out.textContent="模型特徵對應錯誤，請重新分析";return;}
-  prediction+=coefficient*value;
+ // Use the actual selected feature list as the source of truth. Do not compare
+ // stale UI element counts with a model from another slider selection.
+ const featureIds=Array.isArray(model.ids)?model.ids:[];
+ const coefficients=Array.isArray(model.coef)?model.coef:[];
+ if(!featureIds.length||featureIds.length!==coefficients.length){
+  out.textContent="模型係數不完整，請重新執行分析";return;
  }
- if(!Number.isFinite(prediction)){out.textContent="計算結果無效，請檢查輸入數值";return;}
+ const controls=[...el("inputs").children].map(container=>container.querySelector('input[type="number"]'));
+ const values=[];
+ for(let j=0;j<featureIds.length;j++){
+  const input=controls[j];
+  if(!input){out.textContent="預測欄位尚未更新，請重新調整 k";render();return;}
+  const raw=input.value.trim();
+  const value=Number(raw);
+  if(raw===""||!Number.isFinite(value)){
+   out.textContent="請輸入有效數字："+selected.features[j];input.focus();return;
+  }
+  values.push(value);
+ }
+ let prediction=Number(model.intercept);
+ for(let j=0;j<featureIds.length;j++)prediction+=Number(coefficients[j])*values[j];
+ if(!Number.isFinite(prediction)){out.textContent="計算結果無效，請檢查數值或重新分析";return;}
  out.textContent="預測值 ≈ "+fmt(prediction);
 }
 el("predict").addEventListener("click",predictFromInputs);
