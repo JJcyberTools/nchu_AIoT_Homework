@@ -96,7 +96,8 @@ function fit(x,y,ids){
  let beta;try{beta=linearSystem(A,b);}catch(err){for(let j=1;j<p;j++)A[j][j]+=1e-7;beta=linearSystem(A,b);}
  let coef=beta.slice(1).map((v,j)=>v/scales[j]);
  let intercept=beta[0]-coef.reduce((s,v,j)=>s+v*means[j],0);
- return {ids,coef,intercept,predict:r=>intercept+ids.reduce((s,c,j)=>s+r[c]*coef[j],0)};
+ const frozenIds=[...ids];
+ return {ids:frozenIds,coef,intercept,predict:r=>intercept+frozenIds.reduce((s,c,j)=>s+r[c]*coef[j],0)};
 }
 function score(model,x,y){
  let p=x.map(r=>model.predict(r)),mean=y.reduce((a,b)=>a+b,0)/y.length;
