@@ -4,12 +4,12 @@
 
 ## 開啟互動網站
 
-若主儲存庫 GitHub Pages 已以 main / root 發布：
 
 **Live Demo : https://jjcybertools.github.io/nchu_AIoT_Homework/1014_DIC/**
 
 <img width="1490" height="966" alt="image" src="https://github.com/user-attachments/assets/f7f5b6da-54c5-440f-8dc6-a8d516ff142c" />
 <img width="1456" height="979" alt="image" src="https://github.com/user-attachments/assets/60d79465-beb4-42a6-9360-76684cb6eb26" />
+<img width="1544" height="973" alt="image" src="https://github.com/user-attachments/assets/0f55a90c-b21f-4399-b936-1ced7de2edcc" />
 
 
 ## PDF 作業要求對照
