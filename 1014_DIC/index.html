@@ -10,7 +10,7 @@ main{max-width:1160px;margin:0 auto;padding:36px 20px 90px}h1{font-size:clamp(30
 .grid{display:grid;gap:16px}.grid2{grid-template-columns:repeat(2,minmax(0,1fr))}.grid3{grid-template-columns:repeat(3,minmax(0,1fr))}
 label{font-size:13px;display:block;color:var(--soft);margin:10px 0 5px}
 input,select{width:100%;border:1px solid #465974;border-radius:8px;background:#0b172a;color:var(--ink);padding:10px;font:inherit;min-width:0}
-input[type=range]{accent-color:var(--accent)}
+.choice-group{display:flex;gap:7px;flex-wrap:wrap;max-height:140px;overflow:auto;padding:3px 0}.choice-group button{background:#102038;color:#c6d8ed;border:1px solid #465974;padding:8px 13px;border-radius:9px;font-size:13px}.choice-group button[aria-pressed="true"]{background:linear-gradient(110deg,#56e2b5,#7eb0ff);color:#081a2c;border-color:transparent}.choice-group button:focus-visible{outline:2px solid #fff;outline-offset:2px}input:disabled{opacity:.35;cursor:not-allowed;background:#263243}.disabled-field label{opacity:.45}
 button{padding:11px 19px;color:#091528;background:linear-gradient(110deg,var(--accent),#7eb0ff);border:0;border-radius:10px;font:inherit;font-weight:700;cursor:pointer}
 button:disabled{opacity:.5;cursor:wait}.metric{background:#172840;padding:20px;border-radius:14px;border:1px solid var(--line)}
 .metric span{font-size:12px;color:var(--soft)}.metric strong{display:block;font-size:28px;margin:6px 0;font-variant-numeric:tabular-nums}
@@ -24,9 +24,9 @@ a{color:#b5d2ff}.foot{color:var(--soft);font-size:12px;margin-top:40px}@media(ma
 <h1>多元線性迴歸實驗室</h1><p class="muted">完整實作 50 Startups 與 Boston Housing 兩題。從特徵選擇、RMSE / R² 比較到動態回歸方程式與預測；另可自行上傳 CSV 或填入 Dataset 網址。</p>
 <section class="panel"><h2>01 · 載入資料</h2>
 <div class="grid grid3"><div><label for="problem">選擇 Problem</label><select id="problem"><option value="startup">Problem 1 · 50 Startups</option><option value="boston">Problem 2 · Boston Housing</option><option value="custom">加分 · 自訂 Dataset</option></select></div>
-<div><label for="file">本機 CSV（優先）</label><input type="file" id="file" accept=".csv,text/csv"></div><div><label for="url">CSV 網址（HTTPS）</label><input id="url" type="url" placeholder="https://.../data.csv"></div></div>
-<div class="grid grid3"><div><label for="target">目標變數 Y</label><select id="target"><option>Profit</option></select></div>
-<div><label for="k">特徵數 k：<span id="kLabel">2</span></label><input id="k" type="range" min="1" max="5" value="2"></div><div><label>執行</label><button id="go">開始分析</button></div></div>
+<div id="fileField" class="disabled-field"><label for="file">本機 CSV（加分選項限定）</label><input type="file" id="file" accept=".csv,text/csv" disabled></div><div id="urlField" class="disabled-field"><label for="url">CSV 網址（加分選項限定）</label><input id="url" type="url" placeholder="https://.../data.csv" disabled></div></div>
+<div class="grid grid3"><div><label id="targetLabel">目標變數 Y（點選欄位）</label><select id="target" class="hidden" aria-hidden="true" tabindex="-1"><option>Profit</option></select><div id="targetButtons" class="choice-group" role="group" aria-labelledby="targetLabel"></div></div>
+<div><label id="kLabelTitle">特徵數 k：<span id="kLabel">2</span></label><input id="k" type="hidden" value="2"><div id="kButtons" class="choice-group" role="group" aria-labelledby="kLabelTitle"></div></div><div><label>執行</label><button id="go">開始分析</button></div></div>
 <p class="note">內建資料隨 GitHub 專案提供，無須外部 API。前端以訓練集逐步加入特徵並建立 OLS，固定 80/20 拆分；結果可能與教師不同。CSV 網址需允許跨來源存取。</p>
 <div id="status" role="status" aria-live="polite"></div></section>
 <div id="output" class="hidden">
@@ -145,10 +145,37 @@ function plot(id,items,key,color){
  markup+='<text x="'+xx(i)+'" y="'+(H-14)+'" text-anchor="middle" fill="#a9bad3" font-size="12">'+v.k+"</text>";});
  el(id).innerHTML=markup;
 }
+function renderKButtons(){
+ const group=el("kButtons");group.replaceChildren();
+ const max=current?current.results.length:5;
+ for(let n=1;n<=max;n++){
+  const b=document.createElement("button");b.type="button";b.textContent=String(n);
+  b.setAttribute("aria-pressed",String(n===Number(el("k").value)));
+  b.addEventListener("click",()=>{el("k").value=n;render();});
+  group.append(b);
+ }
+}
+function renderTargetButtons(){
+ const group=el("targetButtons");group.replaceChildren();
+ for(const option of el("target").options){
+  const b=document.createElement("button");b.type="button";b.textContent=option.value;
+  b.setAttribute("aria-pressed",String(option.value===el("target").value));
+  b.addEventListener("click",()=>{if(option.value===el("target").value)return;
+   el("target").value=option.value;
+   el("target").dispatchEvent(new Event("change"));
+   renderTargetButtons();
+  });group.append(b);
+ }
+}
+function syncCustomFields(){
+ const enabled=el("problem").value==="custom";
+ for(const id of ["file","url"]){el(id).disabled=!enabled;el(id+"Field").classList.toggle("disabled-field",!enabled);}
+ if(!enabled){el("file").value="";el("url").value="";}
+}
 function render(){
  if(!current)return;
  let all=current.results,k=Math.max(1,Math.min(all.length,Number(el("k").value))),r=all[k-1];
- el("k").value=k;el("kLabel").textContent=k;
+ el("k").value=k;el("kLabel").textContent=k;renderKButtons();
  el("rmse").textContent=fmt(r.rmse);el("r2").textContent=r.r2.toFixed(4);
  el("sample").textContent=current.y.length;el("split").textContent="訓練 "+current.train+" 筆／測試 "+current.test+" 筆";
  plot("rmsePlot",all,"rmse","#56e2b5");plot("r2Plot",all,"r2","#89aaff");
@@ -169,7 +196,7 @@ function render(){
 }
 function fillTarget(headers,preferred){
  el("target").replaceChildren();headers.forEach(name=>{let option=document.createElement("option");option.value=name;option.textContent=name;el("target").append(option);});
- el("target").value=headers.includes(preferred)?preferred:headers[headers.length-1];
+ el("target").value=headers.includes(preferred)?preferred:headers[headers.length-1];renderTargetButtons();
 }
 async function run(){
  el("go").disabled=true;el("status").textContent="正在讀取並計算資料…";
@@ -190,9 +217,9 @@ async function run(){
  }catch(e){el("status").textContent="無法分析："+e.message+"。如被瀏覽器阻擋讀取，請使用 GitHub Pages 網址或上傳本機 CSV。";}
  finally{el("go").disabled=false;}
 }
-el("problem").addEventListener("change",()=>{el("file").value="";el("url").value="";sourceRows=null;sourceHeaders=null;});
+el("problem").addEventListener("change",()=>{syncCustomFields();sourceRows=null;sourceHeaders=null;});
 el("go").addEventListener("click",run);
-el("k").addEventListener("input",render);
+
 el("target").addEventListener("change",()=>{if(!sourceRows)return;try{current=analyze(prepare(sourceHeaders,sourceRows,el("target").value));el("k").max=current.results.length;el("k").value=1;render();el("status").textContent="✓ 已重新選擇目標欄位並分析";}catch(e){el("status").textContent=e.message;}});
 function predictFromInputs(){
  const out=el("predictOutput");
@@ -225,5 +252,5 @@ function predictFromInputs(){
  out.textContent="預測值 ≈ "+fmt(prediction);
 }
 el("predict").addEventListener("click",predictFromInputs);
-run();
+syncCustomFields();renderKButtons();run();
 </script></body></html>
