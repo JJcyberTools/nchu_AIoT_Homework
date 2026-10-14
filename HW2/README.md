@@ -11,7 +11,7 @@
 1. 從 Kaggle 下載 **Regression with a Flood Prediction Dataset**：https://www.kaggle.com/competitions/playground-series-s4e5/data （需依 Kaggle 平台條件登入及同意競賽規則）。
 2. 解壓縮後把 **train.csv** 放在本資料夾 `data/train.csv`；不建議將完整大型競賽資料上傳 GitHub。
 3. 安裝：`pip install -r requirements.txt`；開啟 `HW2_Multiple_Linear_Regression.ipynb`，由上而下執行。
-4. Notebook 預設固定抽樣最多 20,000 筆以控制計算時間，報告需註明；需要全資料時設 `MAX_ROWS=None`（SFS 可能非常耗時）。
+4. Notebook 預設固定抽樣最多 3,000 筆以控制計算時間，報告需註明；需要全資料時設 `MAX_ROWS=None`（SFS 可能非常耗時）。
 5. 核對所有輸出，填寫 `REPORT_TEMPLATE.md` 的數字、圖表及個人心得，匯出 PDF。
 6. 將 GPT 對話紀錄另匯出 PDF，使用 NotebookLM 產生至少 100 字摘要並**自行確認內容**，合併進報告。
 7. 將 .ipynb 與報告 PDF 放入依老師格式命名的 ZIP，提交 iLearning。
