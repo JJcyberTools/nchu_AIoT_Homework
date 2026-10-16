@@ -6,7 +6,7 @@ main{max-width:1160px;margin:auto;padding:32px 20px 90px}h1{font-size:clamp(27px
 a{color:#b5d2ff}.scroll{overflow:auto}table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{color:var(--soft)}tr.best{background:#1c4549}button{border:0;border-radius:9px;background:linear-gradient(110deg,var(--accent),#7eb0ff);color:#0b1827;font:inherit;font-weight:700;padding:10px 18px;cursor:pointer}
 .fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}label{display:block;font-size:12px;color:var(--soft);margin-bottom:5px;overflow-wrap:anywhere}input{width:100%;padding:9px;background:#0b172a;border:1px solid #526783;color:var(--ink);border-radius:8px;font:inherit}#pred{font-size:25px;color:var(--accent);font-weight:700}#chart{width:100%;height:auto;display:block}.pill{display:inline-block;border:1px solid #416d73;color:#8cf2d5;padding:3px 10px;border-radius:99px;font-size:12px}.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.step{padding:15px;border:1px solid var(--line);border-radius:12px;background:#13243a}.step b{color:#9df5d2}.foot{font-size:12px;color:var(--soft);margin-top:32px}
 @media(max-width:760px){main{padding:20px 12px}.panel{padding:15px}.stats,.two,.steps{grid-template-columns:repeat(2,minmax(0,1fr))}.fields{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:480px){.stats,.two,.steps{grid-template-columns:1fr}}
- .plot{width:100%;height:390px;min-width:0}.chart-help{color:var(--soft);font-size:12px;margin-top:7px} </style><script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script></head><body><main>
+ .live-field{padding:10px;background:#11253a;border:1px solid #30425d;border-radius:10px}.live-pair{display:flex;align-items:center;gap:9px}.live-pair input[type=range]{flex:1;min-width:25px;accent-color:#56e2b5;padding:0}.live-pair input[type=number]{width:68px;padding:6px}.live-graph{width:100%;height:auto;display:block;min-height:160px}.live-legend{font-size:12px;color:#a9bed8}.plot{width:100%;height:390px;min-width:0}.chart-help{color:var(--soft);font-size:12px;margin-top:7px} </style><script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script></head><body><main>
 <div class="kicker">NCHU · AIoT · HW2 · MULTIPLE LINEAR REGRESSION</div><h1>洪水機率預測 · 多元線性迴歸</h1>
 <p class="muted">Kaggle <b>Regression with a Flood Prediction Dataset</b>｜直接呈現真實資料分析成果，無需選擇 DIC2 原型題目、上傳 CSV 或手動開始分析。</p>
 <section class="panel"><h2>01 · 研究資料與實驗設定</h2><div class="grid stats">
@@ -23,8 +23,8 @@ a{color:#b5d2ff}.scroll{overflow:auto}table{border-collapse:collapse;width:100%;
 <h3 style="margin-top:20px">RMSE 比較（越低越好）</h3><div id="interactiveRMSE" class="plot" role="img" aria-label="可互動的 12 組模型 RMSE 比較"></div><p class="chart-help">滑鼠移入顯示數值；點選圖例可切換模型。若圖表套件無法載入，請參考上方完整比較表。</p></section>
 <section class="panel"><h2>04 · 互動預測圖與 95% 預測區間</h2><p class="note">使用與報告相同的 Kaggle 資料、抽樣設定與 OLS 預測區間計算。為提高網頁效能，展示依預測值排序的 21 個測試集代表點；完整測試集為 600 筆，95% 預測區間涵蓋率 95.0%。</p><div id="interactivePI" class="plot" role="img" aria-label="可互動的實際值、預測值及 95% 預測區間"></div><div id="interactiveScatter" class="plot" role="img" aria-label="可互動的實際值對預測值散點圖"></div><p class="chart-help">可以縮放、平移、查看每筆預測值與區間，或在圖例切換實際值、預測值、區間上下界。注意：預測區間來自 OLS，而最佳 RMSE 模型為 Ridge；同方差與殘差常態性假設未完全滿足。</p></section><section class="panel"><h2>05 · 洪水資料預覽</h2><p class="note">以下為固定種子抽樣的前 5 筆真實資料，僅顯示部分欄位；完整資料含 20 個預測特徵。</p>
 <div class="scroll"><table><thead><tr><th>MonsoonIntensity</th><th>TopographyDrainage</th><th>RiverManagement</th><th>Deforestation</th><th>FloodProbability (Y)</th></tr></thead><tbody id="previewRows"></tbody></table></div></section>
-<section class="panel"><h2>06 · Ridge 模型即時預測</h2><p>使用本次訓練的 <b>20 特徵 Ridge 迴歸係數</b>進行瀏覽器端試算。下方預先填入一筆抽樣資料的特徵值，可以直接按「預測」。</p>
-<div id="fields" class="fields"></div><p style="margin-top:17px"><button id="predict">計算洪水機率預測值</button> <button id="reset" type="button" style="background:#243a53;color:#e2eeff;border:1px solid #58728b">恢復範例數值</button></p>
+<section class="panel"><h2>06 · Ridge 模型即時預測</h2><p>使用本次訓練的 <b>20 特徵 Ridge 迴歸係數</b>進行瀏覽器端試算。下方預先填入一筆抽樣資料的特徵值，可拖動滑桿或輸入數字，預測值與下方圖表會同步更新。歷史測試集 RMSE、R² 與 OLS 預測區間不會因單筆試算而變動。</p>
+<div id="fields" class="fields"></div><div class="grid two" style="margin-top:16px"><div><h3>即時預測值變化</h3><svg class="live-graph" id="liveGauge" viewBox="0 0 520 180" role="img" aria-label="即時 Ridge 預測值與初始範例的比較"></svg></div><div><h3>各特徵對預測值的變化量</h3><svg class="live-graph" id="liveContribution" viewBox="0 0 520 320" role="img" aria-label="相對於預設輸入，各特徵造成的預測差異"></svg></div></div><p class="live-legend">圖表依已訓練的 Ridge 係數即時計算，顯示單一輸入情境的變化；不是重新訓練模型、不是因果效果，也不是新的測試集評估。</p><p style="margin-top:17px"><button id="predict">計算洪水機率預測值</button> <button id="reset" type="button" style="background:#243a53;color:#e2eeff;border:1px solid #58728b">恢復範例數值</button></p>
 <div id="pred" aria-live="polite">—</div><p class="note">此為連續值迴歸，不保證輸出一定介於 0～1；結果僅供課堂示範，不可作為實際防災決策。</p></section>
 <section class="panel"><h2>06 · 預測區間與迴歸假設診斷</h2><div class="grid stats"><div class="stat"><small>OLS 95% 預測區間涵蓋率</small><strong>95.0%</strong></div><div class="stat"><small>平均預測區間寬</small><strong>0.07859</strong></div><div class="stat"><small>Durbin–Watson</small><strong>2.064</strong></div><div class="stat"><small>最大 VIF</small><strong>1.018</strong></div></div><p class="note">95% 預測區間以 OLS 解析式計算（非 Ridge）；Breusch–Pagan p=1.36×10⁻¹⁹、Jarque–Bera p=1.54×10⁻⁷³，顯示同方差與殘差常態假設不完全成立，區間僅為教學近似。詳細預測區間圖、Q–Q 圖與解釋請見正式分析報告及 Notebook。</p></section>
 <section class="panel"><h2>07 · CRISP-DM 六階段</h2><div class="steps">
@@ -41,9 +41,59 @@ const names=["MonsoonIntensity","TopographyDrainage","RiverManagement","Deforest
 const $=id=>document.getElementById(id),fmt=(v,n=6)=>Number(v).toFixed(n);
 results.forEach((r,i)=>{const tr=document.createElement("tr");if(i===0)tr.className="best";r.forEach((v,j)=>{const td=document.createElement("td");td.textContent=j>=3?fmt(v,j===5?4:6):v;tr.append(td)});$("modelRows").append(tr)});
 preview.forEach(r=>{const tr=document.createElement("tr");r.forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.append(td)});$("previewRows").append(tr)});
-names.forEach((name,i)=>{const div=document.createElement("div"),lab=document.createElement("label"),inp=document.createElement("input");lab.textContent=(i+1)+". "+name;inp.type="number";inp.step="any";inp.value=example[i];inp.dataset.i=i;div.append(lab,inp);$("fields").append(div)});
-$("predict").addEventListener("click",()=>{let p=-0.05274714568844163;for(const input of $("fields").querySelectorAll("input")){const raw=input.value.trim(),v=Number(raw);if(!raw||!Number.isFinite(v)){$("pred").textContent="請輸入有效數字："+names[Number(input.dataset.i)];return}p+=coef[Number(input.dataset.i)]*v} $("pred").textContent="預測 FloodProbability ≈ "+fmt(p,6)});
-$("reset").addEventListener("click",()=>{$("fields").querySelectorAll("input").forEach((e,i)=>e.value=example[i]);$("pred").textContent="—"});
+const baseline=-0.05274714568844163+example.reduce((v,x,i)=>v+x*coef[i],0);
+const valInputs=[],sliderInputs=[];
+names.forEach((name,i)=>{
+ const div=document.createElement("div"),lab=document.createElement("label"),pair=document.createElement("div"),range=document.createElement("input"),input=document.createElement("input");
+ div.className="live-field";pair.className="live-pair";lab.textContent=(i+1)+". "+name;
+ range.type="range";range.min="0";range.max="20";range.step="1";range.value=String(example[i]);range.setAttribute("aria-label",name+" 滑桿");
+ input.type="number";input.min="0";input.step="1";input.value=String(example[i]);input.setAttribute("aria-label",name+" 數值");
+ range.addEventListener("input",()=>{input.value=range.value;updateLivePrediction()});
+ input.addEventListener("input",()=>{const v=Number(input.value);if(input.value.trim()!==""&&Number.isFinite(v)){range.value=String(Math.max(0,Math.min(20,v)))}updateLivePrediction()});
+ pair.append(range,input);div.append(lab,pair);$("fields").append(div);valInputs.push(input);sliderInputs.push(range);
+});
+function svgElement(tag,attrs,textContent){
+ const e=document.createElementNS("http://www.w3.org/2000/svg",tag);
+ for(const [k,v] of Object.entries(attrs||{}))e.setAttribute(k,String(v));
+ if(textContent!==undefined)e.textContent=textContent;
+ return e;
+}
+function updateLivePrediction(){
+ const vals=[];
+ for(let i=0;i<valInputs.length;i++){
+  const raw=valInputs[i].value.trim(),v=Number(raw);
+  if(raw===""||!Number.isFinite(v)){ $("pred").textContent="請輸入有效數字："+names[i];$("liveGauge").replaceChildren();$("liveContribution").replaceChildren();return;}
+  vals.push(v);
+ }
+ const contributions=vals.map((v,i)=>(v-example[i])*coef[i]);
+ const prediction=baseline+contributions.reduce((a,b)=>a+b,0);
+ $("pred").textContent="預測 FloodProbability ≈ "+fmt(prediction,6)+"（較範例 "+(prediction-baseline>=0?"+":"")+fmt(prediction-baseline,6)+"）";
+ const gauge=$("liveGauge");gauge.replaceChildren();
+ gauge.append(svgElement("text",{x:14,y:22,fill:"#c6d8ed","font-size":13},"預設範例："+fmt(baseline,4)));
+ gauge.append(svgElement("text",{x:14,y:45,fill:"#56e2b5","font-size":15},"目前試算："+fmt(prediction,4)));
+ const left=34,width=440,axisY=99;
+ gauge.append(svgElement("line",{x1:left,y1:axisY,x2:left+width,y2:axisY,stroke:"#aac0d8","stroke-width":2}));
+ for(const v of [0,.25,.5,.75,1]){const x=left+v*width;gauge.append(svgElement("line",{x1:x,y1:axisY-5,x2:x,y2:axisY+6,stroke:"#aac0d8"}));gauge.append(svgElement("text",{x:x-12,y:axisY+26,fill:"#aac0d8","font-size":11},String(v)));}
+ for(const [v,color,y,label] of [[baseline,"#ffbd7a",axisY-15,"範例"],[prediction,"#56e2b5",axisY+15,"目前"]]){
+ const x=left+Math.max(0,Math.min(1,v))*width;
+ gauge.append(svgElement("line",{x1:x,y1:axisY-31,x2:x,y2:axisY+32,stroke:color,"stroke-width":3}));
+ gauge.append(svgElement("circle",{cx:x,cy:y,r:6,fill:color}));
+ }
+ gauge.append(svgElement("text",{x:14,y:160,fill:"#a9bed8","font-size":12},"橫軸僅供 0～1 參考，超出範圍的結果會貼齊邊界。"));
+ const graph=$("liveContribution");graph.replaceChildren();
+ const ranking=contributions.map((d,i)=>({name:names[i],delta:d})).sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta)).slice(0,8);
+ const max=Math.max(.001,...ranking.map(o=>Math.abs(o.delta))),cx=259,unit=190/max;
+ graph.append(svgElement("line",{x1:cx,y1:25,x2:cx,y2:306,stroke:"#a9bed8","stroke-width":1}));
+ ranking.forEach((o,i)=>{
+ const y=35+i*34,w=Math.abs(o.delta)*unit,x=o.delta>=0?cx:cx-w;
+ graph.append(svgElement("text",{x:8,y:y+12,fill:"#d5e6fa","font-size":10},(o.name.length>25?o.name.slice(0,23)+"…":o.name)));
+ graph.append(svgElement("rect",{x,y:y+16,width:Math.max(1,w),height:11,rx:3,fill:o.delta>=0?"#56e2b5":"#ffbd7a"}));
+ graph.append(svgElement("text",{x:o.delta>=0?Math.min(477,cx+w+6):Math.max(6,cx-w-58),y:y+26,fill:"#d5e6fa","font-size":10},(o.delta>=0?"+":"")+fmt(o.delta,4)));
+ });
+}
+$("predict").addEventListener("click",updateLivePrediction);
+$("reset").addEventListener("click",()=>{valInputs.forEach((e,i)=>{e.value=String(example[i]);sliderInputs[i].value=String(example[i])});updateLivePrediction()});
+updateLivePrediction();
 const intervalPoints=[[0.352414,0.415,0.31309,0.391738],[0.419523,0.405,0.380277,0.458769],[0.449957,0.45,0.41061,0.489305],[0.461083,0.45,0.421754,0.500413],[0.467793,0.48,0.428516,0.507069],[0.474675,0.48,0.435391,0.51396],[0.47929,0.445,0.440023,0.518558],[0.485443,0.52,0.446159,0.524728],[0.491284,0.49,0.45205,0.530517],[0.495723,0.49,0.45641,0.535036],[0.498769,0.485,0.459535,0.538003],[0.502633,0.52,0.463348,0.541917],[0.509521,0.495,0.470171,0.54887],[0.518506,0.525,0.479233,0.557778],[0.531357,0.525,0.49208,0.570635],[0.536883,0.535,0.497509,0.576258],[0.542438,0.555,0.503134,0.581743],[0.551061,0.54,0.5117,0.590421],[0.565011,0.565,0.52575,0.604272],[0.580809,0.57,0.541532,0.620086],[0.679251,0.675,0.639714,0.718787]];
 function drawInteractiveCharts(){
 if(typeof Plotly==="undefined"){for(const id of ["interactiveRMSE","interactivePI","interactiveScatter"])$(id).textContent="互動圖表套件未載入；請確認網路連線。";return}
