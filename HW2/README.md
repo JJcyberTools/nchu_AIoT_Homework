@@ -16,12 +16,21 @@
 6. 將 GPT 對話紀錄另匯出 PDF，使用 NotebookLM 產生至少 100 字摘要並**自行確認內容**，合併進報告。
 7. 將 .ipynb 與報告 PDF 放入依老師格式命名的 ZIP，提交 iLearning。
 
-## 網頁原型
+## HW2 洪水預測成果網站
 
-[HW2 互動版（GitHub Pages）](https://jjcybertools.github.io/nchu_AIoT_Homework/HW2/) — 可上傳 CSV 觀察特徵數 k、RMSE/R²、回歸方程式。**網站是輔助展示，無法取代正式 Notebook 與 PDF 報告。** Kaggle train.csv 很大，建議只上傳抽樣後 CSV；Notebook 才是主要分析。
+[HW2 互動版（GitHub Pages）](https://jjcybertools.github.io/nchu_AIoT_Homework/HW2/) — 直接展示 Kaggle 洪水資料、12 組模型比較、RMSE/R²、CRISP-DM 與 20 特徵 Ridge 即時預測，無需上傳 CSV。**網站是輔助展示，不能取代正式 Notebook 與 PDF 報告。**
 
-## 目前狀態
+## 已完成的實際分析（2026-10-17）
 
-- 已建立可執行的分析程式、網頁原型、報告模板與依賴清單。
-- **尚未下載 Kaggle 原始資料、實際執行 Notebook 或產生有實證數值的正式 PDF。**
-- GPT 對話紀錄、NotebookLM 摘要、個人資料及 iLearning 繳交需由使用者補齊。
+- 使用者提供真實 Kaggle train.csv，共 1,117,957 筆、20 個原始特徵。
+- random_state=42 抽樣 3,000 筆；訓練 2,400 筆、測試 600 筆。
+- 12 組模型比較：全部特徵 / SelectKBest / RFE / SFS × OLS / Ridge / Lasso。最佳 Ridge(20特徵) RMSE=0.019644、R²=0.860401。
+- 已新增 **OLS 95% 預測區間**程式（本次測試集實測涵蓋率 95.0%，平均區間寬 0.07859），以及殘差圖、常態 Q-Q、Breusch–Pagan、Jarque–Bera、Durbin–Watson、VIF 診斷。
+- 診斷結果：BP p=1.36e-19、JB p=1.54e-73、DW=2.064、max VIF=1.018。BP/JB 顯示簡單常態同方差假設並不完全符合，故 95% 區間須視為教學用近似值。
+- **仍需學生自行處理**：ChatGPT 全部對話匯出 PDF、NotebookLM 研究與至少 100 字摘要、姓名學號、依指定格式命名與 iLearning 上傳。
+
+## 注意事項
+
+- Notebook 需要原始 `data/train.csv` 才能重新執行；大型原始 CSV 不放 GitHub。
+- Notebook 需要 `scipy` 和 `statsmodels`（已列入 requirements.txt）。
+- 正式 PDF 報告需包含 **預測圖及其 95% 預測區間**、方法比較、AI 使用揭露與 NotebookLM 摘要。
