@@ -36,7 +36,7 @@
 | SFS 14 特徵 / OLS | 待檢視比較表 | 約 0.001134 | 0.033681 | 0.589622 | 待檢視比較表 |
 | RFE 14 特徵 / OLS | 待檢視比較表 | 約 0.001173 | 0.034243 | 0.575820 | 待檢視比較表 |
 
-實際繪製了 Actual vs Predicted、Residual plot、Residual distribution 三張診斷圖，請將 `HW2_evaluation_plots.png` 插入 PDF。測試 R² 約 0.8604，表示在本次切分下模型能解釋約 86.0% 的測試目標變異；但未執行正式的獨立性、同方差、常態性與共線性檢定，不能宣稱已通過假設檢查。
+實際繪製了 Actual vs Predicted、Residual plot、Residual distribution 三張診斷圖，以及 OLS **95% 預測區間圖** `HW2_prediction_interval_95.png` 和殘差/Q–Q 診斷圖 `HW2_regression_diagnostics.png`，請將圖片插入 PDF。測試集的 95% 預測區間實際涵蓋率為 **95.0%**，平均區間寬 **0.07859**。區間是基於 OLS、t 分布與同方差常態誤差假設的教學近似；不是 Ridge 的精確區間。測試 R² 約 0.8604，表示在本次切分下模型能解釋約 86.0% 的測試目標變異；實際診斷結果：Breusch–Pagan p = 1.36×10⁻¹⁹（同方差假設遭拒絕）、Jarque–Bera p = 1.54×10⁻⁷³（殘差常態假設遭拒絕）、Durbin–Watson = 2.064（未見明顯一階相關，但抽樣順序無自然時間意義）、最大 VIF = 1.018（未見嚴重共線性）。因此應明確揭露：傳統 OLS 預測區間假設未完全滿足。
 
 ## 六、Deployment
 
@@ -48,13 +48,17 @@
 
 限制：競賽資料的泛化能力未知；單次隨機切分與抽樣可能改變結果；相關不代表因果。
 
-## 八、AI 輔助紀錄
+## 八、方法比較與主流解法討論
+
+本研究以普通最小平方法（OLS）作為基準，並比較 Ridge（L2 正則化）與 Lasso（L1 正則化）。Ridge 透過係數懲罰降低模型對資料的敏感度；Lasso 可將部分係數壓至零，兼具特徵篩選效果。這些是 scikit-learn 文件中常見的線性迴歸方法。本次資料的 Ridge 與 OLS 結果非常接近，Lasso 在指定 alpha=0.001 時略差；未經調參與交叉驗證，不能宣稱 Ridge 對所有資料最優。另可考慮 RandomForestRegressor、HistGradientBoostingRegressor 等非線性方法，但本作業未執行這些模型，故不提供虛構分數。請學生在 NotebookLM 實際研究網路上同主題解法後補充有來源的比較。
+
+## 九、AI 輔助紀錄
 
 ChatGPT 使用說明：用於規劃 Notebook、資料處理、模型比較、程式除錯及報告結構。**請附真實 GPT 對話匯出 PDF**。
 
 NotebookLM 摘要（至少 100 字）：**待使用者實際操作 NotebookLM 後填寫**。
 
-## 九、參考資料
+## 十、參考資料
 
 - Kaggle: Regression with a Flood Prediction Dataset, Playground Series S4E5, https://www.kaggle.com/competitions/playground-series-s4e5/data
 - Scikit-learn 官方文件：https://scikit-learn.org/stable/
