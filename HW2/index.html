@@ -26,7 +26,8 @@ a{color:#b5d2ff}.scroll{overflow:auto}table{border-collapse:collapse;width:100%;
 <section class="panel"><h2>05 · Ridge 模型即時預測</h2><p>使用本次訓練的 <b>20 特徵 Ridge 迴歸係數</b>進行瀏覽器端試算。下方預先填入一筆抽樣資料的特徵值，可以直接按「預測」。</p>
 <div id="fields" class="fields"></div><p style="margin-top:17px"><button id="predict">計算洪水機率預測值</button> <button id="reset" type="button" style="background:#243a53;color:#e2eeff;border:1px solid #58728b">恢復範例數值</button></p>
 <div id="pred" aria-live="polite">—</div><p class="note">此為連續值迴歸，不保證輸出一定介於 0～1；結果僅供課堂示範，不可作為實際防災決策。</p></section>
-<section class="panel"><h2>06 · CRISP-DM 六階段</h2><div class="steps">
+<section class="panel"><h2>06 · 預測區間與迴歸假設診斷</h2><div class="grid stats"><div class="stat"><small>OLS 95% 預測區間涵蓋率</small><strong>95.0%</strong></div><div class="stat"><small>平均預測區間寬</small><strong>0.07859</strong></div><div class="stat"><small>Durbin–Watson</small><strong>2.064</strong></div><div class="stat"><small>最大 VIF</small><strong>1.018</strong></div></div><p class="note">95% 預測區間以 OLS 解析式計算（非 Ridge）；Breusch–Pagan p=1.36×10⁻¹⁹、Jarque–Bera p=1.54×10⁻⁷³，顯示同方差與殘差常態假設不完全成立，區間僅為教學近似。詳細預測區間圖、Q–Q 圖與解釋請見正式分析報告及 Notebook。</p></section>
+<section class="panel"><h2>07 · CRISP-DM 六階段</h2><div class="steps">
 <div class="step"><b>1. Business Understanding</b><p>以 20 個環境與基礎設施特徵預測洪水機率。</p></div>
 <div class="step"><b>2. Data Understanding</b><p>檢查 Kaggle 資料結構、目標分布與缺失值。</p></div>
 <div class="step"><b>3. Data Preparation</b><p>抽樣 3,000 筆，80/20 切分、補值與標準化。</p></div>
