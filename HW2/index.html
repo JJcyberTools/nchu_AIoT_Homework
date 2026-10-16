@@ -6,7 +6,7 @@ main{max-width:1160px;margin:auto;padding:32px 20px 90px}h1{font-size:clamp(27px
 a{color:#b5d2ff}.scroll{overflow:auto}table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}th{color:var(--soft)}tr.best{background:#1c4549}button{border:0;border-radius:9px;background:linear-gradient(110deg,var(--accent),#7eb0ff);color:#0b1827;font:inherit;font-weight:700;padding:10px 18px;cursor:pointer}
 .fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}label{display:block;font-size:12px;color:var(--soft);margin-bottom:5px;overflow-wrap:anywhere}input{width:100%;padding:9px;background:#0b172a;border:1px solid #526783;color:var(--ink);border-radius:8px;font:inherit}#pred{font-size:25px;color:var(--accent);font-weight:700}#chart{width:100%;height:auto;display:block}.pill{display:inline-block;border:1px solid #416d73;color:#8cf2d5;padding:3px 10px;border-radius:99px;font-size:12px}.steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.step{padding:15px;border:1px solid var(--line);border-radius:12px;background:#13243a}.step b{color:#9df5d2}.foot{font-size:12px;color:var(--soft);margin-top:32px}
 @media(max-width:760px){main{padding:20px 12px}.panel{padding:15px}.stats,.two,.steps{grid-template-columns:repeat(2,minmax(0,1fr))}.fields{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:480px){.stats,.two,.steps{grid-template-columns:1fr}}
-</style></head><body><main>
+ .plot{width:100%;height:390px;min-width:0}.chart-help{color:var(--soft);font-size:12px;margin-top:7px} </style><script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script></head><body><main>
 <div class="kicker">NCHU · AIoT · HW2 · MULTIPLE LINEAR REGRESSION</div><h1>洪水機率預測 · 多元線性迴歸</h1>
 <p class="muted">Kaggle <b>Regression with a Flood Prediction Dataset</b>｜直接呈現真實資料分析成果，無需選擇 DIC2 原型題目、上傳 CSV 或手動開始分析。</p>
 <section class="panel"><h2>01 · 研究資料與實驗設定</h2><div class="grid stats">
@@ -20,10 +20,10 @@ a{color:#b5d2ff}.scroll{overflow:auto}table{border-collapse:collapse;width:100%;
 <p class="note">Ridge(alpha=1.0)；測試 MSE = 0.000385897。OLS 的 RMSE = 0.019645，差異很小。</p></section>
 <section class="panel"><h2>03 · 12 組模型與特徵選擇比較</h2><p class="note">依測試 RMSE 由小到大排序。特徵選擇在訓練資料上執行；RFE、SelectKBest、SFS 使用 14 個特徵。</p>
 <div class="scroll"><table><thead><tr><th>特徵選擇</th><th>迴歸模型</th><th>特徵數</th><th>MAE</th><th>RMSE</th><th>R²</th></tr></thead><tbody id="modelRows"></tbody></table></div>
-<h3 style="margin-top:20px">RMSE 比較（越低越好）</h3><svg id="chart" viewBox="0 0 800 335" role="img" aria-label="12 組模型測試 RMSE 長條圖"></svg></section>
-<section class="panel"><h2>04 · 洪水資料預覽</h2><p class="note">以下為固定種子抽樣的前 5 筆真實資料，僅顯示部分欄位；完整資料含 20 個預測特徵。</p>
+<h3 style="margin-top:20px">RMSE 比較（越低越好）</h3><div id="interactiveRMSE" class="plot" role="img" aria-label="可互動的 12 組模型 RMSE 比較"></div><p class="chart-help">滑鼠移入顯示數值；點選圖例可切換模型。若圖表套件無法載入，請參考上方完整比較表。</p></section>
+<section class="panel"><h2>04 · 互動預測圖與 95% 預測區間</h2><p class="note">使用與報告相同的 Kaggle 資料、抽樣設定與 OLS 預測區間計算。為提高網頁效能，展示依預測值排序的 21 個測試集代表點；完整測試集為 600 筆，95% 預測區間涵蓋率 95.0%。</p><div id="interactivePI" class="plot" role="img" aria-label="可互動的實際值、預測值及 95% 預測區間"></div><div id="interactiveScatter" class="plot" role="img" aria-label="可互動的實際值對預測值散點圖"></div><p class="chart-help">可以縮放、平移、查看每筆預測值與區間，或在圖例切換實際值、預測值、區間上下界。注意：預測區間來自 OLS，而最佳 RMSE 模型為 Ridge；同方差與殘差常態性假設未完全滿足。</p></section><section class="panel"><h2>05 · 洪水資料預覽</h2><p class="note">以下為固定種子抽樣的前 5 筆真實資料，僅顯示部分欄位；完整資料含 20 個預測特徵。</p>
 <div class="scroll"><table><thead><tr><th>MonsoonIntensity</th><th>TopographyDrainage</th><th>RiverManagement</th><th>Deforestation</th><th>FloodProbability (Y)</th></tr></thead><tbody id="previewRows"></tbody></table></div></section>
-<section class="panel"><h2>05 · Ridge 模型即時預測</h2><p>使用本次訓練的 <b>20 特徵 Ridge 迴歸係數</b>進行瀏覽器端試算。下方預先填入一筆抽樣資料的特徵值，可以直接按「預測」。</p>
+<section class="panel"><h2>06 · Ridge 模型即時預測</h2><p>使用本次訓練的 <b>20 特徵 Ridge 迴歸係數</b>進行瀏覽器端試算。下方預先填入一筆抽樣資料的特徵值，可以直接按「預測」。</p>
 <div id="fields" class="fields"></div><p style="margin-top:17px"><button id="predict">計算洪水機率預測值</button> <button id="reset" type="button" style="background:#243a53;color:#e2eeff;border:1px solid #58728b">恢復範例數值</button></p>
 <div id="pred" aria-live="polite">—</div><p class="note">此為連續值迴歸，不保證輸出一定介於 0～1；結果僅供課堂示範，不可作為實際防災決策。</p></section>
 <section class="panel"><h2>06 · 預測區間與迴歸假設診斷</h2><div class="grid stats"><div class="stat"><small>OLS 95% 預測區間涵蓋率</small><strong>95.0%</strong></div><div class="stat"><small>平均預測區間寬</small><strong>0.07859</strong></div><div class="stat"><small>Durbin–Watson</small><strong>2.064</strong></div><div class="stat"><small>最大 VIF</small><strong>1.018</strong></div></div><p class="note">95% 預測區間以 OLS 解析式計算（非 Ridge）；Breusch–Pagan p=1.36×10⁻¹⁹、Jarque–Bera p=1.54×10⁻⁷³，顯示同方差與殘差常態假設不完全成立，區間僅為教學近似。詳細預測區間圖、Q–Q 圖與解釋請見正式分析報告及 Notebook。</p></section>
@@ -47,4 +47,21 @@ $("reset").addEventListener("click",()=>{$("fields").querySelectorAll("input").f
 const svg=$("chart"),ns="http://www.w3.org/2000/svg";function line(x1,y1,x2,y2,color){let e=document.createElementNS(ns,"line");for(const [k,v] of Object.entries({x1,y1,x2,y2,stroke:color}))e.setAttribute(k,v);svg.append(e)}
 function text(x,y,t){let e=document.createElementNS(ns,"text");e.setAttribute("x",x);e.setAttribute("y",y);e.setAttribute("fill","#d5e6fa");e.setAttribute("font-size","11");e.textContent=t;svg.append(e)}
 results.forEach((r,i)=>{const y=12+i*26; text(7,y+15,r[0]+" / "+r[1]);let rect=document.createElementNS(ns,"rect");rect.setAttribute("x",220);rect.setAttribute("y",y+2);rect.setAttribute("width",Math.round(r[4]/.04*425));rect.setAttribute("height",16);rect.setAttribute("rx",4);rect.setAttribute("fill",i===0?"#56e2b5":"#7eb0ff");svg.append(rect);text(665,y+15,fmt(r[4],5))});
+
+const intervalPoints=[[0.3524,0.415,0.3131,0.3917],[0.3881,0.38,0.3488,0.4274],[0.4195,0.405,0.3803,0.4588],[0.442,0.425,0.4028,0.4813],[0.4561,0.43,0.4169,0.4954],[0.4658,0.445,0.4266,0.5051],[0.473,0.51,0.4337,0.5122],[0.4808,0.46,0.4416,0.52],[0.4888,0.48,0.4495,0.5282],[0.4957,0.49,0.4564,0.535],[0.5006,0.49,0.4613,0.5398],[0.5058,0.54,0.4665,0.5451],[0.5132,0.54,0.4738,0.5525],[0.5214,0.505,0.4822,0.5607],[0.53,0.55,0.4907,0.5692],[0.5383,0.525,0.4991,0.5776],[0.5467,0.555,0.5074,0.5859],[0.5562,0.5,0.5168,0.5956],[0.5699,0.58,0.5306,0.6093],[0.5844,0.6,0.5451,0.6236],[0.6367,0.62,0.5974,0.676]];
+function drawInteractiveCharts(){
+if(typeof Plotly==="undefined"){for(const id of ["interactiveRMSE","interactivePI","interactiveScatter"])$(id).textContent="互動圖表套件未載入；請確認網路連線。";return}
+const layout={paper_bgcolor:"rgba(0,0,0,0)",plot_bgcolor:"rgba(0,0,0,0)",font:{color:"#d9eaff"},margin:{l:60,r:25,t:35,b:55},legend:{orientation:"h",y:1.16},hovermode:"closest"};
+const config={responsive:true,displaylogo:false,toImageButtonOptions:{format:"png",filename:"HW2_chart",scale:2}};
+const names=results.map(r=>r[0]+" / "+r[1]);
+Plotly.newPlot("interactiveRMSE",[{type:"bar",orientation:"h",x:results.map(r=>r[4]),y:names,marker:{color:results.map((r,i)=>i===0?"#56e2b5":"#7eb0ff")},hovertemplate:"%{y}<br>RMSE: %{x:.6f}<extra></extra>"}],{...layout,margin:{l:200,r:20,t:20,b:55},yaxis:{autorange:"reversed",automargin:true},xaxis:{title:"測試集 RMSE",gridcolor:"#31465e"},showlegend:false},config);
+const px=intervalPoints.map((r,i)=>i+1),actual=intervalPoints.map(r=>r[1]),pred=intervalPoints.map(r=>r[0]),lower=intervalPoints.map(r=>r[2]),upper=intervalPoints.map(r=>r[3]);
+Plotly.newPlot("interactivePI",[
+{x:px,y:lower,type:"scatter",mode:"lines",name:"95% 下界",line:{color:"#6ea3d9",width:1},hovertemplate:"樣本 %{x}<br>下界 %{y:.4f}<extra></extra>"},
+{x:px,y:upper,type:"scatter",mode:"lines",name:"95% 上界",line:{color:"#6ea3d9",width:1},fill:"tonexty",fillcolor:"rgba(110,163,217,.2)",hovertemplate:"樣本 %{x}<br>上界 %{y:.4f}<extra></extra>"},
+{x:px,y:pred,type:"scatter",mode:"lines+markers",name:"OLS 預測",line:{color:"#56e2b5"},marker:{size:5}},
+{x:px,y:actual,type:"scatter",mode:"markers",name:"實際值",marker:{color:"#ffbd7a",size:8}}],{...layout,title:{text:"OLS 預測值與 95% 預測區間",font:{size:15}},xaxis:{title:"測試樣本（依預測值排序）"},yaxis:{title:"FloodProbability",gridcolor:"#31465e"}},config);
+Plotly.newPlot("interactiveScatter",[{type:"scatter",mode:"markers",x:actual,y:pred,name:"測試資料",marker:{color:"#56e2b5",size:9},hovertemplate:"實際 %{x:.4f}<br>預測 %{y:.4f}<extra></extra>"},{type:"scatter",mode:"lines",x:[.3,.7],y:[.3,.7],name:"理想預測 y=x",line:{color:"#ffbd7a",dash:"dash"}}],{...layout,title:{text:"Actual vs Predicted（21 個展示點）",font:{size:15}},xaxis:{title:"實際 FloodProbability",gridcolor:"#31465e"},yaxis:{title:"OLS 預測 FloodProbability",gridcolor:"#31465e"}},config);
+}
+window.addEventListener("load",drawInteractiveCharts);
 </script></body></html>
